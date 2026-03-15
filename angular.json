@@ -1,0 +1,63 @@
+{
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+  "version": 1,
+  "newProjectRoot": "projects",
+  "projects": {
+    "embroidery-erp": {
+      "projectType": "application",
+      "schematics": {
+        "@schematics/angular:component": { "style": "scss" },
+        "@schematics/angular:application": { "strict": true }
+      },
+      "root": "",
+      "sourceRoot": "src",
+      "prefix": "erp",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-angular:application",
+          "options": {
+            "outputPath": "dist/embroidery-erp",
+            "index": "src/index.html",
+            "browser": "src/main.ts",
+            "polyfills": ["zone.js"],
+            "tsConfig": "tsconfig.app.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              { "glob": "**/*", "input": "src/assets", "output": "assets" },
+              { "glob": "**/*.{ico,txt}", "input": "src", "output": "/" }
+            ],
+            "styles": [
+              "node_modules/primeicons/primeicons.css",
+              "node_modules/primeflex/primeflex.css",
+              "src/styles.scss"
+            ],
+            "scripts": []
+          },
+          "configurations": {
+            "production": {
+              "budgets": [
+                { "type": "initial", "maximumWarning": "2mb", "maximumError": "5mb" },
+                { "type": "anyComponentStyle", "maximumWarning": "2kb", "maximumError": "10kb" }
+              ],
+              "outputHashing": "all"
+            },
+            "development": {
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
+            }
+          },
+          "defaultConfiguration": "production"
+        },
+        "serve": {
+          "builder": "@angular-devkit/build-angular:dev-server",
+          "configurations": {
+            "production": { "buildTarget": "embroidery-erp:build:production" },
+            "development": { "buildTarget": "embroidery-erp:build:development" }
+          },
+          "defaultConfiguration": "development"
+        }
+      }
+    }
+  }
+}
