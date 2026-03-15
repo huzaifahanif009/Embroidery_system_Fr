@@ -34,7 +34,7 @@ export class DepartmentsComponent extends BaseComponent implements OnInit {
     { field: 'code', headerName: 'Code', width: 100 },
     { field: 'name', headerName: 'Department', flex: 1 },
     {
-      field: 'is_active', headerName: 'Status', width: 80,
+      field: 'isActive', headerName: 'Status', width: 80,
       cellRenderer: (p: any) => `<span class="tw-badge ${p.value === true ? 'tw-badge-green' : 'tw-badge-slate'}">${p.value}</span>`
     }
   ];

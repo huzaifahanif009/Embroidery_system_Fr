@@ -7,9 +7,11 @@ import { BaseComponent } from '../../../shared/components/base/base.component';
 import { ErpGridComponent } from '../../../shared/components/ag-grid/ag-grid.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { MockService } from '../../../shared/services/mock.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ModalMode } from '../../../core/models';
+import { EmployeesService } from '../../../core/services/api/employees.service';
+import { Department } from '../../../core/services/api/api.models';
+import { DepartmentsService } from '../../../core/services/api/departments.service';
 
 @Component({
   selector: 'erp-employees',
@@ -28,9 +30,9 @@ import { ModalMode } from '../../../core/models';
         </div>
         <div class="tw-form-group">
           <label class="tw-label-field">Department *</label>
-          <select formControlName="department" class="tw-select" [attr.disabled]="mode==='view'?true:null">
-            <option value="">Select...</option>
-            <option *ngFor="let d of deptOpts" [value]="d">{{ d }}</option>
+          <select formControlName="departmentId" class="tw-select" [attr.disabled]="mode==='view'?true:null">
+            <option [ngValue]="null">Select...</option>
+            <option *ngFor="let d of deptOpts" [ngValue]="d.id">{{ d.name }}</option>
           </select>
         </div>
         <div class="tw-form-group">
@@ -89,7 +91,7 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
   mode: ModalMode = 'create';
   form!: FormGroup;
   selected: Record<string, unknown> | null = null;
-  deptOpts = ['Production', 'HR', 'Finance', 'QC', 'IT'];
+  deptOpts: any[] = [];
 
   get modalTitle(): string {
     return ({ create: 'New Employee', edit: 'Edit Employee', view: 'Employee Details' } as Record<string, string>)[this.mode];
@@ -116,18 +118,20 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
   ];
 
   constructor(
-    private mock: MockService,
     private toast: ToastService,
     private fb: FormBuilder,
+    private employeeService: EmployeesService,
+    private departmentService: DepartmentsService,
   ) { super(); }
 
   ngOnInit(): void {
-    this.rows = [...this.mock.employees];
+    this.loadEmployees();
+    this.loadDepartments();
     this.form = this.fb.group({
       empCode: ['', Validators.required],
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
-      department: ['', Validators.required],
+      departmentId: [null, Validators.required],
       phone: [''],
       email: [''],
       designation: ['', Validators.required],
@@ -136,6 +140,24 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
       baseSalary: [0, [Validators.required, Validators.min(0)]],
       status: ['active'],
       gender: ['M'],
+    });
+  }
+
+  loadEmployees(): void {
+    this.employeeService.getAll().subscribe({
+      next: (res) => {
+        this.rows = [...res.data.data];
+      },
+      error: (err) => console.error(err)
+    });
+  }
+
+  loadDepartments(): void {
+    this.departmentService.getAll().subscribe({
+      next: (res) => {
+        this.deptOpts = res.data.data;
+      },
+      error: (err) => console.error(err)
     });
   }
 
@@ -149,9 +171,16 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
   onAction(e: { action: string; data: unknown }): void {
     const row = e.data as Record<string, unknown>;
     if (e.action === 'delete') {
-      this.mock.employees = this.mock.employees.filter(x => x.id !== row['id']);
-      this.rows = [...this.mock.employees];
-      this.toast.success('Deleted');
+      this.employeeService.delete(row['id'] as number).subscribe({
+        next: () => {
+          this.rows = this.rows.filter(x => (x as any).id !== row['id']);
+          this.toast.success('Deleted');
+        },
+        error: (err) => {
+          this.toast.error('Failed to delete');
+          console.error(err);
+        }
+      });
     } else {
       this.selected = row;
       this.mode = e.action as ModalMode;
@@ -164,19 +193,41 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
   onSave(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.saving = true;
-    setTimeout(() => {
-      const val = this.form.getRawValue();
-      if (this.mode === 'create') {
-        this.mock.employees.push({ ...val, id: Date.now().toString() } as typeof this.mock.employees[0]);
-      } else if (this.selected) {
-        const idx = this.mock.employees.findIndex(x => x.id === this.selected!['id']);
-        if (idx > -1) this.mock.employees[idx] = { ...this.mock.employees[idx], ...val };
-      }
-      this.rows = [...this.mock.employees];
-      this.saving = false;
-      this.showModal = false;
-      this.toast.success('Saved', `Employee ${this.mode === 'create' ? 'created' : 'updated'}`);
-    }, 500);
+    const val = this.form.getRawValue();
+
+    if (this.mode === 'create') {
+      this.employeeService.create(val).subscribe({
+        next: (res) => {
+          this.rows = [...this.rows, res.data];
+          this.saving = false;
+          this.showModal = false;
+          this.toast.success('Saved', 'Employee created');
+        },
+        error: (err) => {
+          this.saving = false;
+          this.toast.error('Failed to create');
+          console.error(err);
+        }
+      });
+    } else if (this.selected) {
+      this.employeeService.update(this.selected['id'] as number, val).subscribe({
+        next: (res) => {
+          const idx = this.rows.findIndex(x => (x as any).id === this.selected!['id']);
+          if (idx > -1) {
+            this.rows[idx] = res.data;
+            this.rows = [...this.rows];
+          }
+          this.saving = false;
+          this.showModal = false;
+          this.toast.success('Saved', 'Employee updated');
+        },
+        error: (err) => {
+          this.saving = false;
+          this.toast.error('Failed to update');
+          console.error(err);
+        }
+      });
+    }
   }
 
   close(): void { this.showModal = false; this.form.enable(); }
