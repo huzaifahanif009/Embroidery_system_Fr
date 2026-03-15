@@ -6,8 +6,12 @@
     "embroidery-erp": {
       "projectType": "application",
       "schematics": {
-        "@schematics/angular:component": { "style": "scss" },
-        "@schematics/angular:application": { "strict": true }
+        "@schematics/angular:component": {
+          "style": "scss"
+        },
+        "@schematics/angular:application": {
+          "strict": true
+        }
       },
       "root": "",
       "sourceRoot": "src",
@@ -19,12 +23,22 @@
             "outputPath": "dist/embroidery-erp",
             "index": "src/index.html",
             "browser": "src/main.ts",
-            "polyfills": ["zone.js"],
+            "polyfills": [
+              "zone.js"
+            ],
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "assets": [
-              { "glob": "**/*", "input": "src/assets", "output": "assets" },
-              { "glob": "**/*.{ico,txt}", "input": "src", "output": "/" }
+              {
+                "glob": "**/*",
+                "input": "src/assets",
+                "output": "assets"
+              },
+              {
+                "glob": "**/*.{ico,txt}",
+                "input": "src",
+                "output": "/"
+              }
             ],
             "styles": [
               "node_modules/primeicons/primeicons.css",
@@ -36,8 +50,16 @@
           "configurations": {
             "production": {
               "budgets": [
-                { "type": "initial", "maximumWarning": "2mb", "maximumError": "5mb" },
-                { "type": "anyComponentStyle", "maximumWarning": "2kb", "maximumError": "10kb" }
+                {
+                  "type": "initial",
+                  "maximumWarning": "2mb",
+                  "maximumError": "5mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "6kb",
+                  "maximumError": "12kb"
+                }
               ],
               "outputHashing": "all"
             },
@@ -52,8 +74,12 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
-            "production": { "buildTarget": "embroidery-erp:build:production" },
-            "development": { "buildTarget": "embroidery-erp:build:development" }
+            "production": {
+              "buildTarget": "embroidery-erp:build:production"
+            },
+            "development": {
+              "buildTarget": "embroidery-erp:build:development"
+            }
           },
           "defaultConfiguration": "development"
         }

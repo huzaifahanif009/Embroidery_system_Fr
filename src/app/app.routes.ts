@@ -34,6 +34,7 @@ export const routes: Routes = [
       { path: 'finance/ar/customers',       loadComponent: () => import('./features/finance/ar/customers/customers.component').then(m => m.CustomersComponent) },
       { path: 'finance/ar/invoices',        loadComponent: () => import('./features/finance/ar/customers/customers.component').then(m => m.CustomersComponent) },
       { path: 'finance/ar/aging',           loadComponent: () => import('./features/finance/ar/customers/customers.component').then(m => m.CustomersComponent) },
+      { path: 'settings/tenants',        loadComponent: () => import('./features/settings/tenant/tenant.component').then(m => m.TenantComponent) },
       { path: 'settings/company',        loadComponent: () => import('./features/settings/company/company.component').then(m => m.CompanyComponent) },
       { path: 'settings/departments',    loadComponent: () => import('./features/settings/departments/departments.component').then(m => m.DepartmentsComponent) },
       { path: 'settings/financial-year', loadComponent: () => import('./features/settings/financial-year/financial-year.component').then(m => m.FinancialYearComponent) },

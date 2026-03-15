@@ -115,41 +115,57 @@ export class SidebarComponent {
 
   navItems: NavItem[] = [
     { label: 'Dashboard', icon: 'pi-home', route: '/dashboard' },
-    { label: 'MAIN', icon: '', children: [
-      { label: 'Orders', icon: 'pi-file', route: '/orders/work-orders', badge: 14 },
-      { label: 'Production', icon: 'pi-wrench', route: '/orders/production', badge: 3 },
-      { label: 'Designs & Files', icon: 'pi-images', route: '/orders/quotations' },
-    ]},
-    { label: 'BUSINESS', icon: '', children: [
-      { label: 'Customers', icon: 'pi-users', route: '/finance/ar/customers' },
-      { label: 'Invoices', icon: 'pi-receipt', route: '/finance/ar/invoices', badge: 7 },
-      { label: 'Quotations', icon: 'pi-file-edit', route: '/orders/quotations' },
-      { label: 'Reports', icon: 'pi-chart-bar', route: '/finance/ar/aging' },
-    ]},
-    { label: 'INVENTORY', icon: '', children: [
-      { label: 'Thread Stock', icon: 'pi-box', route: '/inventory/items' },
-      { label: 'Suppliers', icon: 'pi-building', route: '/finance/ap/vendors' },
-      { label: 'Stock Receive', icon: 'pi-download', route: '/inventory/receive' },
-      { label: 'Reorder', icon: 'pi-bell', route: '/inventory/reorder' },
-    ]},
-    { label: 'HR', icon: '', children: [
-      { label: 'Employees', icon: 'pi-id-card', route: '/hr/employees' },
-      { label: 'Attendance', icon: 'pi-calendar', route: '/hr/attendance' },
-      { label: 'Leaves', icon: 'pi-calendar-times', route: '/hr/leaves' },
-    ]},
-    { label: 'MACHINES', icon: '', children: [
-      { label: 'Machine Registry', icon: 'pi-cog', route: '/machines/registry' },
-      { label: 'Maintenance', icon: 'pi-wrench', route: '/machines/maintenance' },
-      { label: 'OEE Dashboard', icon: 'pi-chart-line', route: '/machines/oee' },
-    ]},
-    { label: 'FINANCE', icon: '', children: [
-      { label: 'Purchase Orders', icon: 'pi-shopping-cart', route: '/finance/ap/purchase-orders' },
-      { label: 'AP Bills', icon: 'pi-file-pdf', route: '/finance/ap/bills' },
-    ]},
-    { label: 'SETTINGS', icon: '', children: [
-      { label: 'Company', icon: 'pi-building', route: '/settings/company' },
-      { label: 'Departments', icon: 'pi-sitemap', route: '/settings/departments' },
-      { label: 'Financial Year', icon: 'pi-calendar-plus', route: '/settings/financial-year' },
-    ]},
+    {
+      label: 'Entity & System Setup', icon: '', children: [
+        { label: 'Tenants', icon: 'pi-building', route: '/settings/tenants' },
+        { label: 'Company', icon: 'pi-building', route: '/settings/company' },
+        { label: 'Departments', icon: 'pi-sitemap', route: '/settings/departments' },
+        { label: 'Financial Year', icon: 'pi-calendar-plus', route: '/settings/financial-year' },
+      ]
+    },
+    {
+      label: 'Order & Production', icon: '', children: [
+        { label: 'Orders', icon: 'pi-file', route: '/orders/work-orders', badge: 14 },
+        { label: 'Production', icon: 'pi-wrench', route: '/orders/production', badge: 3 },
+        { label: 'Designs & Files', icon: 'pi-images', route: '/orders/quotations' },
+      ]
+    },
+    {
+      label: 'Accounts Receivable (AR)', icon: '', children: [
+        { label: 'Customers', icon: 'pi-users', route: '/finance/ar/customers' },
+        { label: 'Invoices', icon: 'pi-receipt', route: '/finance/ar/invoices', badge: 7 },
+        { label: 'Quotations', icon: 'pi-file-edit', route: '/orders/quotations' },
+        { label: 'Reports', icon: 'pi-chart-bar', route: '/finance/ar/aging' },
+      ]
+    },
+    {
+      label: 'Inventory & Materials', icon: '', children: [
+        { label: 'Thread Stock', icon: 'pi-box', route: '/inventory/items' },
+        { label: 'Suppliers', icon: 'pi-building', route: '/finance/ap/vendors' },
+        { label: 'Stock Receive', icon: 'pi-download', route: '/inventory/receive' },
+        { label: 'Reorder', icon: 'pi-bell', route: '/inventory/reorder' },
+      ]
+    },
+    {
+      label: 'HR Management', icon: '', children: [
+        { label: 'Employees', icon: 'pi-id-card', route: '/hr/employees' },
+        { label: 'Attendance', icon: 'pi-calendar', route: '/hr/attendance' },
+        { label: 'Leaves', icon: 'pi-calendar-times', route: '/hr/leaves' },
+      ]
+    },
+    {
+      label: 'Machine Management', icon: '', children: [
+        { label: 'Machine Registry', icon: 'pi-cog', route: '/machines/registry' },
+        { label: 'Maintenance', icon: 'pi-wrench', route: '/machines/maintenance' },
+        { label: 'OEE Dashboard', icon: 'pi-chart-line', route: '/machines/oee' },
+      ]
+    },
+    {
+      label: 'Accounts Payable (AP)', icon: '', children: [
+        { label: 'Purchase Orders', icon: 'pi-shopping-cart', route: '/finance/ap/purchase-orders' },
+        { label: 'AP Bills', icon: 'pi-file-pdf', route: '/finance/ap/bills' },
+      ]
+    },
+
   ];
 }

@@ -19,7 +19,7 @@ export class AuthService {
     if (u) this.user$.next(u);
   }
 
-  login(email: string, password: string, tenant = 'system-admin'): Observable<AuthResponse> {
+  login(email: string, password: string, tenant: string): Observable<AuthResponse> {
     return this.http.post<ApiResponse<AuthResponse>>(`${environment.apiUrl}/auth/login`, { email, password, tenant }).pipe(
       map(r => r.data),
       tap(d => { this.storage.setToken(d.accessToken); this.storage.set(USER_KEY, d.user); this.user$.next(d.user); })

@@ -399,17 +399,17 @@ export class LoginComponent implements OnInit {
     private auth: AuthService,
     private toast: ToastService,
     private router: Router,
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     if (this.auth.isAuthenticated()) this.router.navigate(["/dashboard"]);
     this.form = this.fb.group({
-      email: ["admin@system.local", [Validators.required, Validators.email]],
+      email: ["", [Validators.required, Validators.email]],
       password: [
-        "Admin@1234567",
-        [Validators.required, Validators.minLength(6)],
+        "",
+        [Validators.required],
       ],
-      tenant: ["system-admin", Validators.required],
+      tenant: ["", Validators.required],
     });
   }
 

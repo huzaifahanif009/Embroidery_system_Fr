@@ -12,6 +12,7 @@ import { CommonModule } from '@angular/common';
       <button class="action-btn view-btn" title="View" (click)="onView()">
         <i class="pi pi-eye"></i>
       </button>
+      <div class="action-divider"></div>
       <button class="action-btn edit-btn" title="Edit" (click)="onEdit()">
         <i class="pi pi-pencil"></i>
       </button>
@@ -34,9 +35,9 @@ import { CommonModule } from '@angular/common';
     .grid-actions-wrapper {
       display: flex;
       align-items: center;
-      gap: 4px;
+      // gap: 4px;
       height: 100%;
-      padding: 0 4px;
+      // padding: 0 4px;
     }
 
     .action-btn {
@@ -77,7 +78,7 @@ import { CommonModule } from '@angular/common';
     .action-divider {
       width: 1px;
       height: 14px;
-      background: #e8e6df;
+      background: #6e8078ff;
       margin: 0 2px;
     }
 
@@ -95,13 +96,13 @@ export class GridActionsComponent implements ICellRendererAngularComp {
     onDelete?: (d: unknown) => void;
   };
 
-  agInit(p: ICellRendererParams): void { 
-    this.params = p as typeof this.params; 
+  agInit(p: ICellRendererParams): void {
+    this.params = p as typeof this.params;
   }
 
   refresh(): boolean { return false; }
 
-  onView()   { this.params?.onView?.(this.params.data); }
-  onEdit()   { this.params?.onEdit?.(this.params.data); }
+  onView() { this.params?.onView?.(this.params.data); }
+  onEdit() { this.params?.onEdit?.(this.params.data); }
   onDelete() { this.params?.onDelete?.(this.params.data); }
 }

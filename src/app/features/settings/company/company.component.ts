@@ -3,10 +3,11 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { ToastService } from '../../../core/services/toast.service';
+import { CompanyProfilesService } from '@core/services/api/company-profiles.service';
 @Component({
-  selector:'erp-company',standalone:true,
-  imports:[CommonModule,ReactiveFormsModule,PageHeaderComponent],
-  template:`
+  selector: 'erp-company', standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent],
+  template: `
     <erp-page-header title="Company Profile" subtitle="Organisation identity" [showNew]="false"></erp-page-header>
     <div class="tw-card tw-p-4" style="max-width:680px">
       <form [formGroup]="form">
@@ -30,11 +31,35 @@ import { ToastService } from '../../../core/services/toast.service';
           </button>
         </div>
       </form>
-    </div>`,styles:[]
+    </div>`, styles: []
 })
 export class CompanyComponent implements OnInit {
-  form!:FormGroup; saving=false;
-  constructor(private fb:FormBuilder,private toast:ToastService){}
-  ngOnInit():void{this.form=this.fb.group({companyName:['Threadwork Studio Ltd',Validators.required],tradeName:['Threadwork'],regNumber:['1234567'],taxNumber:['1234567-8'],address:['123 Industrial Area, Karachi, Pakistan',Validators.required],phone:['021-1234567',Validators.required],email:['info@threadwork.pk',[Validators.required,Validators.email]],currency:['PKR',Validators.required],timezone:['Asia/Karachi',Validators.required]});}
-  save():void{if(this.form.invalid){this.form.markAllAsTouched();return;}this.saving=true;setTimeout(()=>{this.saving=false;this.toast.success('Saved','Company profile updated');},800);}
+  form!: FormGroup; saving = false;
+  constructor(private fb: FormBuilder, private toast: ToastService, private companyService: CompanyProfilesService) { }
+  ngOnInit(): void {
+    this.form = this.fb.group({ companyName: ['Threadwork Studio Ltd', Validators.required], tradeName: ['Threadwork'], regNumber: ['1234567'], taxNumber: ['1234567-8'], address: ['123 Industrial Area, Karachi, Pakistan', Validators.required], phone: ['021-1234567', Validators.required], email: ['info@threadwork.pk', [Validators.required, Validators.email]], currency: ['PKR', Validators.required], timezone: ['Asia/Karachi', Validators.required] });
+    this.companyService.getById(1).subscribe({
+      next: (res) => {
+        console.log('Company Profile', res);
+        this.form.patchValue(res);
+      },
+      error: (err) => {
+        console.error(err);
+      }
+    });
+  }
+  save(): void {
+    if (this.form.invalid) { this.form.markAllAsTouched(); return; } this.saving = true;
+    this.companyService.update(1, this.form.value).subscribe({
+      next: () => {
+        this.saving = false;
+        this.toast.success('Saved', 'Company profile updated');
+      },
+      error: (err) => {
+        this.saving = false;
+        this.toast.error('Failed', 'Failed to update company profile');
+        console.error(err);
+      }
+    });
+  }
 }

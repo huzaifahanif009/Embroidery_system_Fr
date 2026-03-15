@@ -2,29 +2,32 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ColDef } from 'ag-grid-community';
+import { ConfirmationService } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
 import { BaseComponent } from '../../../shared/components/base/base.component';
 import { ErpGridComponent } from '../../../shared/components/ag-grid/ag-grid.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
 import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { MockService } from '../../../shared/services/mock.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ModalMode } from '../../../core/models';
 
 @Component({
-  selector: 'erp-employees',
+  selector: 'erp-tenants',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, ErpGridComponent, ModalComponent,
-    PageHeaderComponent, DialogModule],
+    PageHeaderComponent, ConfirmDialogComponent, DialogModule],
   template: `
-    <erp-page-header title="Employee Master" subtitle="HR employee records" (newClick)="openCreate()"></erp-page-header>
+    <erp-confirm></erp-confirm>
+    <erp-page-header title="Tenant Master" subtitle="Tenant records" (newClick)="openCreate()"></erp-page-header>
     <erp-grid [rowData]="rows" [columnDefs]="cols" gridType="type1" (rowAction)="onAction($event)"></erp-grid>
     <erp-modal [(visible)]="showModal" [header]="modalTitle" [mode]="mode" [saving]="saving"
       (save)="onSave()" (cancel)="close()">
       <form [formGroup]="form" class="fg">
         <div class="tw-form-group">
-          <label class="tw-label-field">Employee Code *</label>
-          <input formControlName="empCode" class="tw-input" [readonly]="mode==='view'" placeholder="EMP-001" />
+          <label class="tw-label-field">Tenant Code *</label>
+          <input formControlName="tenantCode" class="tw-input" [readonly]="mode==='view'" placeholder="TEN-001" />
         </div>
         <div class="tw-form-group">
           <label class="tw-label-field">Department *</label>
@@ -83,7 +86,7 @@ import { ModalMode } from '../../../core/models';
   styles: [`.fg { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .fc { grid-column: 1 / -1; }`]
 })
-export class EmployeesComponent extends BaseComponent implements OnInit {
+export class TenantComponent extends BaseComponent implements OnInit {
   rows: unknown[] = [];
   showModal = false;
   mode: ModalMode = 'create';
@@ -92,11 +95,11 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
   deptOpts = ['Production', 'HR', 'Finance', 'QC', 'IT'];
 
   get modalTitle(): string {
-    return ({ create: 'New Employee', edit: 'Edit Employee', view: 'Employee Details' } as Record<string, string>)[this.mode];
+    return ({ create: 'New Tenant', edit: 'Edit Tenant', view: 'Tenant Details' } as Record<string, string>)[this.mode];
   }
 
   cols: ColDef[] = [
-    { field: 'empCode', headerName: 'Code', width: 100, },
+    { field: 'tenantCode', headerName: 'Code', width: 100, },
     { field: 'firstName', headerName: 'First Name', flex: 1 },
     { field: 'lastName', headerName: 'Last Name', flex: 1 },
     { field: 'department', headerName: 'Dept', width: 110 },
@@ -119,6 +122,7 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
     private mock: MockService,
     private toast: ToastService,
     private fb: FormBuilder,
+    private confirm: ConfirmationService,
   ) { super(); }
 
   ngOnInit(): void {
@@ -149,9 +153,15 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
   onAction(e: { action: string; data: unknown }): void {
     const row = e.data as Record<string, unknown>;
     if (e.action === 'delete') {
-      this.mock.employees = this.mock.employees.filter(x => x.id !== row['id']);
-      this.rows = [...this.mock.employees];
-      this.toast.success('Deleted');
+      this.confirm.confirm({
+        message: `Delete employee ${row['empCode']}?`, header: 'Confirm Delete',
+        icon: 'pi pi-exclamation-triangle',
+        accept: () => {
+          this.mock.employees = this.mock.employees.filter(x => x.id !== row['id']);
+          this.rows = [...this.mock.employees];
+          this.toast.success('Deleted');
+        }
+      });
     } else {
       this.selected = row;
       this.mode = e.action as ModalMode;
