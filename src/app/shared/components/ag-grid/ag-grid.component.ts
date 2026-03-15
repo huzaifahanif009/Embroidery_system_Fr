@@ -7,7 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { AgGridAngular } from 'ag-grid-angular';
 import {
   ColDef, GridReadyEvent, GridApi,
-  themeQuartz, colorSchemeLightWarm
+  themeQuartz, colorSchemeLightWarm, RowSelectionOptions
 } from 'ag-grid-community';
 
 const myTheme = themeQuartz.withPart(colorSchemeLightWarm).withParams({
@@ -20,7 +20,7 @@ const myTheme = themeQuartz.withPart(colorSchemeLightWarm).withParams({
   headerTextColor: '#6b7060',
   headerBackgroundColor: '#f5f4ef',
   borderColor: '#e8e6df',
-  // rowBorderColor: '#f0ede6',
+  // rowBorder: '#f0ede6',
   rowHoverColor: '#f9f8f3',
   oddRowBackgroundColor: '#ffffff',
   cellHorizontalPadding: 10,
@@ -59,7 +59,7 @@ const myTheme = themeQuartz.withPart(colorSchemeLightWarm).withParams({
         [paginationPageSize]="pageSize"
         [paginationPageSizeSelector]="[10,15,25,50]"
         [animateRows]="true"
-        [suppressRowClickSelection]="true"
+        [rowSelection]="rowSelection"
         (gridReady)="onGridReady($event)">
       </ag-grid-angular>
     </div>
@@ -78,6 +78,11 @@ export class ErpGridComponent implements OnChanges {
   theme = myTheme;
   quickFilter = '';
   totalRows = 0;
+  rowSelection: RowSelectionOptions = {
+    mode: 'multiRow',
+    headerCheckbox: false,
+    enableClickSelection: false,
+  };
   private gridApi!: GridApi;
 
   defaultColDef: ColDef = {
