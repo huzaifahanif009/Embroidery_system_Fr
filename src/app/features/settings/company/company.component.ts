@@ -37,7 +37,18 @@ export class CompanyComponent implements OnInit {
   form!: FormGroup; saving = false;
   constructor(private fb: FormBuilder, private toast: ToastService, private companyService: CompanyProfilesService) { }
   ngOnInit(): void {
-    this.form = this.fb.group({ companyName: ['Threadwork Studio Ltd', Validators.required], tradeName: ['Threadwork'], regNumber: ['1234567'], taxNumber: ['1234567-8'], address: ['123 Industrial Area, Karachi, Pakistan', Validators.required], phone: ['021-1234567', Validators.required], email: ['info@threadwork.pk', [Validators.required, Validators.email]], currency: ['PKR', Validators.required], timezone: ['Asia/Karachi', Validators.required] });
+    this.form = this.fb.group(
+      {
+        companyName: ['Threadwork Studio Ltd', Validators.required],
+        tradeName: ['Threadwork'],
+        regNumber: ['1234567'],
+        taxNumber: ['1234567-8'],
+        address: ['123 Industrial Area, Karachi, Pakistan', Validators.required],
+        phone: ['021-1234567', Validators.required],
+        email: ['info@threadwork.pk', [Validators.required, Validators.email]],
+        currency: ['PKR', Validators.required],
+        timezone: ['Asia/Karachi', Validators.required]
+      });
     this.companyService.getById(1).subscribe({
       next: (res) => {
         console.log('Company Profile', res);

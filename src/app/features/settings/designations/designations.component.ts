@@ -1,16 +1,17 @@
 import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ColDef } from 'ag-grid-community';
 import { BaseComponent } from '../../../shared/components/base/base.component';
 import { ToastService } from '../../../core/services/toast.service';
 import { ModalMode } from '../../../core/models';
-import { DepartmentsService } from '@core/services/api/departments.service';
+import { DesignationsService } from '@core/services/api/designations.service';
 import { SharedModule } from '@shared/gerenal/shared.module';
 @Component({
-  selector: 'emb-departments', standalone: true,
+  selector: 'emb-designations', standalone: true,
   imports: [SharedModule],
   template: `
-<erp-page-header title="Departments" (newClick)="openCreate()"></erp-page-header>
+<erp-page-header title="Designations" (newClick)="openCreate()"></erp-page-header>
 <erp-grid [rowData]="rows" [columnDefs]="cols" gridType="type1" (rowAction)="onAction($event)"></erp-grid>
 <erp-modal [(visible)]="showModal" [header]="modalTitle" [mode]="mode" [saving]="saving" (save)="onSave()" (cancel)="close()" width="580px">
   <form [formGroup]="form" class="fg">
@@ -21,16 +22,17 @@ import { SharedModule } from '@shared/gerenal/shared.module';
 </erp-modal>`,
   styles: ['.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px;}.fc{grid-column:1/-1;}']
 })
-export class DepartmentsComponent extends BaseComponent implements OnInit {
+export class DesignationsComponent extends BaseComponent implements OnInit {
   listOptions = [{ name: 'Active', value: true }, { name: 'Inactive', value: false }];
+
   rows: unknown[] = []; showModal = false; mode: ModalMode = 'create';
   form!: FormGroup;
   selected: Record<string, unknown> | null = null;
 
-  get modalTitle() { return ({ create: 'New', edit: 'Edit', view: 'View' } as Record<string, string>)[this.mode] + ' Departments'; }
+  get modalTitle() { return ({ create: 'New', edit: 'Edit', view: 'View' } as Record<string, string>)[this.mode] + ' Designations'; }
   cols: ColDef[] = [
     { field: 'code', headerName: 'Code', width: 100 },
-    { field: 'name', headerName: 'Department', flex: 1 },
+    { field: 'name', headerName: 'Designation', flex: 1 },
     {
       field: 'isActive', headerName: 'Status', width: 80,
       cellRenderer: (p: any) => `<span class="tw-badge ${p.value === true ? 'tw-badge-green' : 'tw-badge-slate'}">${p.value}</span>`
@@ -39,10 +41,10 @@ export class DepartmentsComponent extends BaseComponent implements OnInit {
   constructor(
     private toast: ToastService,
     private fb: FormBuilder,
-    private departmentService: DepartmentsService
+    private designationService: DesignationsService
   ) { super(); }
   ngOnInit(): void {
-    this.departmentService.getAll().subscribe({
+    this.designationService.getAll().subscribe({
       next: (res) => {
         this.rows = [...(res.data.data as unknown[])];
       },
@@ -61,7 +63,7 @@ export class DepartmentsComponent extends BaseComponent implements OnInit {
   onAction(e: { action: string; data: unknown }): void {
     const row = e.data as Record<string, unknown>;
     if (e.action === 'delete') {
-      this.departmentService.delete(row['id'] as number).subscribe({
+      this.designationService.delete(row['id'] as number).subscribe({
         next: () => {
           this.rows = this.rows.filter(x => (x as any).id !== row['id']);
           this.toast.success('Deleted');
@@ -86,21 +88,21 @@ export class DepartmentsComponent extends BaseComponent implements OnInit {
     const val = this.form.getRawValue();
 
     if (this.mode === 'create') {
-      this.departmentService.create(val).subscribe({
+      this.designationService.create(val).subscribe({
         next: (res) => {
           this.rows = [...this.rows, res.data];
           this.saving = false;
           this.showModal = false;
-          this.toast.success('Department created');
+          this.toast.success('Designation created');
         },
         error: (err) => {
           this.saving = false;
-          this.toast.error('Failed to create department');
+          this.toast.error('Failed to create designation');
           console.error(err);
         }
       });
     } else if (this.selected) {
-      this.departmentService.update(this.selected['id'] as number, val).subscribe({
+      this.designationService.update(this.selected['id'] as number, val).subscribe({
         next: (res) => {
           const idx = this.rows.findIndex(x => (x as any).id === this.selected!['id']);
           if (idx > -1) {
@@ -109,11 +111,11 @@ export class DepartmentsComponent extends BaseComponent implements OnInit {
           }
           this.saving = false;
           this.showModal = false;
-          this.toast.success('Department updated');
+          this.toast.success('Designation updated');
         },
         error: (err) => {
           this.saving = false;
-          this.toast.error('Failed to update department');
+          this.toast.error('Failed to update designation');
           console.error(err);
         }
       });
