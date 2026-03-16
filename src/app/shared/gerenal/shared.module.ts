@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 
 // Import all your custom "Studio" components
-import { PageHeaderComponent } from '@shared/components/page-header/page-header.component';
 import { ErpGridComponent } from '@shared/components/ag-grid/ag-grid.component';
 import { EmbTextboxComponent } from '@shared/components/textbox/textbox.component';
 import { EmbDropdownComponent } from '@shared/components/dropdown/dropdown.component';
@@ -28,7 +27,6 @@ import { ModalComponent } from '@shared/components/modal/modal.component';
         EmbTabsetComponent,
         EmbPanelComponent,
         ModalComponent,
-        PageHeaderComponent,
         ErpGridComponent,
         TooltipModule,
         ButtonModule
@@ -44,7 +42,6 @@ import { ModalComponent } from '@shared/components/modal/modal.component';
         EmbTabsetComponent,
         EmbPanelComponent,
         ModalComponent,
-        PageHeaderComponent,
         ErpGridComponent,
         TooltipModule,
         ButtonModule

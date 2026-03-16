@@ -1,25 +1,38 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { finalize } from 'rxjs/operators';
 import { ColDef } from 'ag-grid-community';
 import { BaseComponent } from '../../../shared/components/base/base.component';
 import { ToastService } from '../../../core/services/toast.service';
 import { ModalMode } from '../../../core/models';
 import { DesignationsService } from '@core/services/api/designations.service';
 import { SharedModule } from '@shared/gerenal/shared.module';
+
 @Component({
-  selector: 'emb-designations', standalone: true,
+  selector: 'emb-designations',
+  standalone: true,
   imports: [SharedModule],
   template: `
-<erp-page-header title="Designations" (newClick)="openCreate()"></erp-page-header>
-<erp-grid [rowData]="rows" [columnDefs]="cols" gridType="type1" (rowAction)="onAction($event)"></erp-grid>
-<erp-modal [(visible)]="showModal" [header]="modalTitle" [mode]="mode" [saving]="saving" (save)="onSave()" (cancel)="close()" width="580px">
+<erp-grid 
+  [rowData]="rows" 
+  [columnDefs]="cols" 
+  [gridType]="3" 
+  (rowAction)="onAction($event)"
+  [(showModal)]="showModal"
+  [modalHeader]="modalTitle"
+  [modalMode]="mode"
+  [saving]="saving"
+  (save)="onSave()"
+  (cancel)="close()"
+  modalWidth="580px">
+  
   <form [formGroup]="form" class="fg">
     <emb-textbox formControlName="code" label="Code *" [readonly]="mode==='view'"></emb-textbox>
     <emb-textbox formControlName="name" label="Name *" [readonly]="mode==='view'"></emb-textbox>
     <emb-dropdown formControlName="isActive" label="Status" [options]="listOptions" [readonly]="mode==='view'"></emb-dropdown>
   </form>
-</erp-modal>`,
+  
+</erp-grid>`,
   styles: ['.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px;}.fc{grid-column:1/-1;}']
 })
 export class DesignationsComponent extends BaseComponent implements OnInit {
@@ -59,7 +72,10 @@ export class DesignationsComponent extends BaseComponent implements OnInit {
         isActive: [true]
       });
   }
-  openCreate(): void { this.mode = 'create'; this.form.reset(); this.form.enable(); this.showModal = true; }
+  openCreate(): void {
+    this.mode = 'create'; this.form.reset({ isActive: true }); this.form.enable();
+    setTimeout(() => this.showModal = true, 50);
+  }
   onAction(e: { action: string; data: unknown }): void {
     const row = e.data as Record<string, unknown>;
     if (e.action === 'delete') {
@@ -78,7 +94,7 @@ export class DesignationsComponent extends BaseComponent implements OnInit {
       this.mode = e.action as ModalMode;
       this.form.patchValue(row);
       if (e.action === 'view') this.form.disable(); else this.form.enable();
-      this.showModal = true;
+      setTimeout(() => this.showModal = true, 50);
     }
   }
 
@@ -88,37 +104,41 @@ export class DesignationsComponent extends BaseComponent implements OnInit {
     const val = this.form.getRawValue();
 
     if (this.mode === 'create') {
-      this.designationService.create(val).subscribe({
-        next: (res) => {
-          this.rows = [...this.rows, res.data];
-          this.saving = false;
-          this.showModal = false;
-          this.toast.success('Designation created');
-        },
-        error: (err) => {
-          this.saving = false;
-          this.toast.error('Failed to create designation');
-          console.error(err);
-        }
-      });
-    } else if (this.selected) {
-      this.designationService.update(this.selected['id'] as number, val).subscribe({
-        next: (res) => {
-          const idx = this.rows.findIndex(x => (x as any).id === this.selected!['id']);
-          if (idx > -1) {
-            this.rows[idx] = res.data;
-            this.rows = [...this.rows];
+      this.designationService.create(val)
+        .pipe(finalize(() => this.saving = false))
+        .subscribe({
+          next: (res: any) => {
+            if (res.success) {
+              this.rows = [...this.rows, res.data];
+              this.showModal = false;
+              this.toast.success('Designation created');
+            }
+          },
+          error: (err) => {
+            this.toast.error('Failed to create designation');
+            console.error(err);
           }
-          this.saving = false;
-          this.showModal = false;
-          this.toast.success('Designation updated');
-        },
-        error: (err) => {
-          this.saving = false;
-          this.toast.error('Failed to update designation');
-          console.error(err);
-        }
-      });
+        });
+    } else if (this.selected) {
+      this.designationService.update(this.selected['id'] as number, val)
+        .pipe(finalize(() => this.saving = false))
+        .subscribe({
+          next: (res: any) => {
+            if (res.success) {
+              const idx = this.rows.findIndex(x => (x as any).id === this.selected!['id']);
+              if (idx > -1) {
+                this.rows[idx] = res.data;
+                this.rows = [...this.rows];
+              }
+              this.showModal = false;
+              this.toast.success('Designation updated');
+            }
+          },
+          error: (err) => {
+            this.toast.error('Failed to update designation');
+            console.error(err);
+          }
+        });
     }
   }
   close(): void { this.showModal = false; this.form.enable(); }

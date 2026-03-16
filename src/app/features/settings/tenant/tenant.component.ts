@@ -2,86 +2,42 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ColDef } from 'ag-grid-community';
-import { ConfirmationService } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
 import { BaseComponent } from '../../../shared/components/base/base.component';
 import { ErpGridComponent } from '../../../shared/components/ag-grid/ag-grid.component';
 import { ModalComponent } from '../../../shared/components/modal/modal.component';
-import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
-import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { MockService } from '../../../shared/services/mock.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ModalMode } from '../../../core/models';
+import { ConfirmationService } from 'primeng/api';
+import { SharedModule } from '@shared/gerenal/shared.module';
 
 @Component({
   selector: 'erp-tenants',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ErpGridComponent, ModalComponent,
-    PageHeaderComponent, ConfirmDialogComponent, DialogModule],
+  imports: [SharedModule],
   template: `
-    <erp-confirm></erp-confirm>
-    <erp-page-header title="Tenant Master" subtitle="Tenant records" (newClick)="openCreate()"></erp-page-header>
-    <erp-grid [rowData]="rows" [columnDefs]="cols" gridType="type1" (rowAction)="onAction($event)"></erp-grid>
-    <erp-modal [(visible)]="showModal" [header]="modalTitle" [mode]="mode" [saving]="saving"
-      (save)="onSave()" (cancel)="close()">
-      <form [formGroup]="form" class="fg">
-        <div class="tw-form-group">
-          <label class="tw-label-field">Tenant Code *</label>
-          <input formControlName="tenantCode" class="tw-input" [readonly]="mode==='view'" placeholder="TEN-001" />
-        </div>
-        <div class="tw-form-group">
-          <label class="tw-label-field">Department *</label>
-          <select formControlName="department" class="tw-select" [attr.disabled]="mode==='view'?true:null">
-            <option value="">Select...</option>
-            <option *ngFor="let d of deptOpts" [value]="d">{{ d }}</option>
-          </select>
-        </div>
-        <div class="tw-form-group">
-          <label class="tw-label-field">First Name *</label>
-          <input formControlName="firstName" class="tw-input" [readonly]="mode==='view'" />
-        </div>
-        <div class="tw-form-group">
-          <label class="tw-label-field">Last Name *</label>
-          <input formControlName="lastName" class="tw-input" [readonly]="mode==='view'" />
-        </div>
-        <div class="tw-form-group">
-          <label class="tw-label-field">Phone</label>
-          <input formControlName="phone" class="tw-input" [readonly]="mode==='view'" />
-        </div>
-        <div class="tw-form-group">
-          <label class="tw-label-field">Email</label>
-          <input formControlName="email" class="tw-input" [readonly]="mode==='view'" />
-        </div>
-        <div class="tw-form-group">
-          <label class="tw-label-field">Designation *</label>
-          <input formControlName="designation" class="tw-input" [readonly]="mode==='view'" />
-        </div>
-        <div class="tw-form-group">
-          <label class="tw-label-field">Employment Type *</label>
-          <select formControlName="employmentType" class="tw-select" [attr.disabled]="mode==='view'?true:null">
-            <option value="full_time">Full Time</option>
-            <option value="part_time">Part Time</option>
-            <option value="contract">Contract</option>
-            <option value="intern">Intern</option>
-          </select>
-        </div>
-        <div class="tw-form-group">
-          <label class="tw-label-field">Joining Date *</label>
-          <input type="date" formControlName="joiningDate" class="tw-input" [readonly]="mode==='view'" />
-        </div>
-        <div class="tw-form-group">
-          <label class="tw-label-field">Base Salary (PKR) *</label>
-          <input type="number" formControlName="baseSalary" class="tw-input" [readonly]="mode==='view'" />
-        </div>
-        <div class="tw-form-group">
-          <label class="tw-label-field">Status</label>
-          <select formControlName="status" class="tw-select" [attr.disabled]="mode==='view'?true:null">
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-        </div>
-      </form>
-    </erp-modal>
+    <erp-grid 
+  [rowData]="rows" 
+  [columnDefs]="cols" 
+  [gridType]="3" 
+  (rowAction)="onAction($event)"
+  [(showModal)]="showModal"
+  [modalHeader]="modalTitle"
+  [modalMode]="mode"
+  [saving]="saving"
+  (save)="onSave()"
+  (cancel)="close()"
+  modalWidth="580px">
+  
+  <form [formGroup]="form" class="fg">
+    <emb-textbox formControlName="tenantCode" label="Tenant Code *" [readonly]="mode==='view'"></emb-textbox>
+    <emb-textbox formControlName="firstName" label="First Name *" [readonly]="mode==='view'"></emb-textbox>
+    <emb-textbox formControlName="lastName" label="Last Name *" [readonly]="mode==='view'"></emb-textbox>
+    
+  </form>
+  
+</erp-grid>
   `,
   styles: [`.fg { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .fc { grid-column: 1 / -1; }`]

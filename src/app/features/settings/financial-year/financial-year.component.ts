@@ -13,9 +13,19 @@ import { EmbTabsetComponent } from '@shared/components/tab/tabset.component';
   imports: [SharedModule, EmbTabsetComponent],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   template: `
-<erp-page-header title="Financial Year" (newClick)="openCreate()"></erp-page-header>
-<erp-grid [rowData]="rows" [columnDefs]="cols" gridType="type1" (rowAction)="onAction($event)"></erp-grid>
-<erp-modal [(visible)]="showModal" [header]="modalTitle" [mode]="mode" [saving]="saving" (save)="onSave()" (cancel)="close()" size="lg">
+<erp-grid 
+  [rowData]="rows" 
+  [columnDefs]="cols" 
+  [gridType]="3" 
+  (rowAction)="onAction($event)"
+  [(showModal)]="showModal"
+  [modalHeader]="modalTitle"
+  [modalMode]="mode"
+  [saving]="saving"
+  (save)="onSave()"
+  (cancel)="close()"
+  modalSize="lg">
+  
   <form [formGroup]="form" class="fg">
     <emb-textbox formControlName="yearCode" label="Code *" [readonly]="mode==='view'"></emb-textbox>
     <emb-textbox formControlName="yearName" label="Name *" [readonly]="mode==='view'"></emb-textbox>
@@ -24,15 +34,12 @@ import { EmbTabsetComponent } from '@shared/components/tab/tabset.component';
     <emb-dropdown formControlName="status" label="Status" [options]="listOptions" [readonly]="mode==='view'"></emb-dropdown>
   </form>
   <emb-tabs>
-  <emb-tabset tabTitle="Periods" tabIcon="pi-map-marker">
-    <erp-grid [rowData]="rows" [columnDefs]="periodsCols" gridType="type3" (rowAction)="onAction($event)"></erp-grid>
-
-  </emb-tabset>
-  <emb-tabset tabTitle="Location" tabIcon="pi-map-marker">
-    
-  </emb-tabset>
-</emb-tabs>
-</erp-modal>`,
+    <emb-tabset tabTitle="Periods" tabIcon="pi-calendar">
+      <erp-grid [rowData]="rows" [columnDefs]="periodsCols" [gridType]="1"></erp-grid>
+    </emb-tabset>
+  </emb-tabs>
+  
+</erp-grid>`,
   styles: ['.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px;}.fc{grid-column:1/-1;}']
 })
 export class FinancialYearComponent extends BaseComponent implements OnInit {

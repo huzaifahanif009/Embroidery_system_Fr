@@ -1,86 +1,47 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { finalize } from 'rxjs/operators';
 import { ColDef } from 'ag-grid-community';
-import { DialogModule } from 'primeng/dialog';
 import { BaseComponent } from '../../../shared/components/base/base.component';
-import { ErpGridComponent } from '../../../shared/components/ag-grid/ag-grid.component';
-import { ModalComponent } from '../../../shared/components/modal/modal.component';
-import { PageHeaderComponent } from '../../../shared/components/page-header/page-header.component';
 import { ToastService } from '../../../core/services/toast.service';
 import { ModalMode } from '../../../core/models';
 import { EmployeesService } from '../../../core/services/api/employees.service';
-import { Department } from '../../../core/services/api/api.models';
-import { DepartmentsService } from '../../../core/services/api/departments.service';
+import { SharedModule } from '../../../shared/gerenal/shared.module';
 
 @Component({
   selector: 'erp-employees',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ErpGridComponent, ModalComponent,
-    PageHeaderComponent, DialogModule],
+  imports: [SharedModule],
   template: `
-    <erp-page-header title="Employee Master" subtitle="HR employee records" (newClick)="openCreate()"></erp-page-header>
-    <erp-grid [rowData]="rows" [columnDefs]="cols" gridType="type1" (rowAction)="onAction($event)"></erp-grid>
-    <erp-modal [(visible)]="showModal" [header]="modalTitle" [mode]="mode" [saving]="saving"
-      (save)="onSave()" (cancel)="close()">
+    
+    <erp-grid 
+      [rowData]="rows" 
+      [columnDefs]="cols" 
+      [gridType]="3" 
+      (rowAction)="onAction($event)"
+      [(showModal)]="showModal"
+      [modalHeader]="modalTitle"
+      [modalMode]="mode"
+      [saving]="saving"
+      (save)="onSave()"
+      (cancel)="close()"
+      modalSize="lg">
+      
       <form [formGroup]="form" class="fg">
-        <div class="tw-form-group">
-          <label class="tw-label-field">Employee Code *</label>
-          <input formControlName="empCode" class="tw-input" [readonly]="mode==='view'" placeholder="EMP-001" />
-        </div>
-        <div class="tw-form-group">
-          <label class="tw-label-field">Department *</label>
-          <select formControlName="departmentId" class="tw-select" [attr.disabled]="mode==='view'?true:null">
-            <option [ngValue]="null">Select...</option>
-            <option *ngFor="let d of deptOpts" [ngValue]="d.id">{{ d.name }}</option>
-          </select>
-        </div>
-        <div class="tw-form-group">
-          <label class="tw-label-field">First Name *</label>
-          <input formControlName="firstName" class="tw-input" [readonly]="mode==='view'" />
-        </div>
-        <div class="tw-form-group">
-          <label class="tw-label-field">Last Name *</label>
-          <input formControlName="lastName" class="tw-input" [readonly]="mode==='view'" />
-        </div>
-        <div class="tw-form-group">
-          <label class="tw-label-field">Phone</label>
-          <input formControlName="phone" class="tw-input" [readonly]="mode==='view'" />
-        </div>
-        <div class="tw-form-group">
-          <label class="tw-label-field">Email</label>
-          <input formControlName="email" class="tw-input" [readonly]="mode==='view'" />
-        </div>
-        <div class="tw-form-group">
-          <label class="tw-label-field">Designation *</label>
-          <input formControlName="designation" class="tw-input" [readonly]="mode==='view'" />
-        </div>
-        <div class="tw-form-group">
-          <label class="tw-label-field">Employment Type *</label>
-          <select formControlName="employmentType" class="tw-select" [attr.disabled]="mode==='view'?true:null">
-            <option value="full_time">Full Time</option>
-            <option value="part_time">Part Time</option>
-            <option value="contract">Contract</option>
-            <option value="intern">Intern</option>
-          </select>
-        </div>
-        <div class="tw-form-group">
-          <label class="tw-label-field">Joining Date *</label>
-          <input type="date" formControlName="joiningDate" class="tw-input" [readonly]="mode==='view'" />
-        </div>
-        <div class="tw-form-group">
-          <label class="tw-label-field">Base Salary (PKR) *</label>
-          <input type="number" formControlName="baseSalary" class="tw-input" [readonly]="mode==='view'" />
-        </div>
-        <div class="tw-form-group">
-          <label class="tw-label-field">Status</label>
-          <select formControlName="status" class="tw-select" [attr.disabled]="mode==='view'?true:null">
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-        </div>
+        <emb-textbox formControlName="empCode" label="Employee Code *" [readonly]="mode==='view'" placeholder="EMP-001"></emb-textbox>
+        <emb-dropdown formControlName="departmentId" label="Department *" [options]="deptOpts" [readonly]="mode==='view'"></emb-dropdown>
+        <emb-textbox formControlName="firstName" label="First Name *" [readonly]="mode==='view'"></emb-textbox>
+        <emb-textbox formControlName="lastName" label="Last Name *" [readonly]="mode==='view'"></emb-textbox>
+        <emb-textbox formControlName="phone" label="Phone" [readonly]="mode==='view'"></emb-textbox>
+        <emb-textbox formControlName="email" label="Email" type="email" [readonly]="mode==='view'"></emb-textbox>
+        <emb-textbox formControlName="designation" label="Designation *" [readonly]="mode==='view'"></emb-textbox>
+        <emb-dropdown formControlName="employmentType" label="Employment Type *" [options]="empTypeOpts" [readonly]="mode==='view'"></emb-dropdown>
+        <emb-textbox formControlName="joiningDate" label="Joining Date *" type="date" [readonly]="mode==='view'"></emb-textbox>
+        <emb-textbox formControlName="baseSalary" label="Base Salary (PKR) *" type="number" [readonly]="mode==='view'"></emb-textbox>
+        <emb-dropdown formControlName="status" label="Status" [options]="statusOpts" [readonly]="mode==='view'"></emb-dropdown>
       </form>
-    </erp-modal>
+      
+    </erp-grid>
   `,
   styles: [`.fg { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .fc { grid-column: 1 / -1; }`]
@@ -92,6 +53,17 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
   form!: FormGroup;
   selected: Record<string, unknown> | null = null;
   deptOpts: any[] = [];
+
+  empTypeOpts = [
+    { name: 'Full Time', value: 'full_time' },
+    { name: 'Part Time', value: 'part_time' },
+    { name: 'Contract', value: 'contract' },
+    { name: 'Intern', value: 'intern' }
+  ];
+  statusOpts = [
+    { name: 'Active', value: 'active' },
+    { name: 'Inactive', value: 'inactive' }
+  ];
 
   get modalTitle(): string {
     return ({ create: 'New Employee', edit: 'Edit Employee', view: 'Employee Details' } as Record<string, string>)[this.mode];
@@ -121,12 +93,12 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
     private toast: ToastService,
     private fb: FormBuilder,
     private employeeService: EmployeesService,
-    private departmentService: DepartmentsService,
   ) { super(); }
 
   ngOnInit(): void {
     this.loadEmployees();
-    this.loadDepartments();
+    // In a real app, you'd load departments from a service here if needed
+    // For now assuming deptOpts are provided or loaded elsewhere
     this.form = this.fb.group({
       empCode: ['', Validators.required],
       firstName: ['', Validators.required],
@@ -152,20 +124,11 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
     });
   }
 
-  loadDepartments(): void {
-    this.departmentService.getAll().subscribe({
-      next: (res) => {
-        this.deptOpts = res.data.data;
-      },
-      error: (err) => console.error(err)
-    });
-  }
-
   openCreate(): void {
     this.mode = 'create';
     this.form.reset({ employmentType: 'full_time', status: 'active', baseSalary: 0, gender: 'M' });
     this.form.enable();
-    this.showModal = true;
+    setTimeout(() => this.showModal = true, 50);
   }
 
   onAction(e: { action: string; data: unknown }): void {
@@ -186,7 +149,7 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
       this.mode = e.action as ModalMode;
       this.form.patchValue(row);
       if (e.action === 'view') this.form.disable(); else this.form.enable();
-      this.showModal = true;
+      setTimeout(() => this.showModal = true, 50);
     }
   }
 
@@ -196,37 +159,41 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
     const val = this.form.getRawValue();
 
     if (this.mode === 'create') {
-      this.employeeService.create(val).subscribe({
-        next: (res) => {
-          this.rows = [...this.rows, res.data];
-          this.saving = false;
-          this.showModal = false;
-          this.toast.success('Saved', 'Employee created');
-        },
-        error: (err) => {
-          this.saving = false;
-          this.toast.error('Failed to create');
-          console.error(err);
-        }
-      });
-    } else if (this.selected) {
-      this.employeeService.update(this.selected['id'] as number, val).subscribe({
-        next: (res) => {
-          const idx = this.rows.findIndex(x => (x as any).id === this.selected!['id']);
-          if (idx > -1) {
-            this.rows[idx] = res.data;
-            this.rows = [...this.rows];
+      this.employeeService.create(val)
+        .pipe(finalize(() => this.saving = false))
+        .subscribe({
+          next: (res) => {
+            if (res.success) {
+              this.rows = [...this.rows, res.data];
+              this.showModal = false;
+              this.toast.success('Saved', 'Employee created');
+            }
+          },
+          error: (err) => {
+            this.toast.error('Failed to create');
+            console.error(err);
           }
-          this.saving = false;
-          this.showModal = false;
-          this.toast.success('Saved', 'Employee updated');
-        },
-        error: (err) => {
-          this.saving = false;
-          this.toast.error('Failed to update');
-          console.error(err);
-        }
-      });
+        });
+    } else if (this.selected) {
+      this.employeeService.update(this.selected['id'] as number, val)
+        .pipe(finalize(() => this.saving = false))
+        .subscribe({
+          next: (res) => {
+            if (res.success) {
+              const idx = this.rows.findIndex(x => (x as any).id === this.selected!['id']);
+              if (idx > -1) {
+                this.rows[idx] = res.data;
+                this.rows = [...this.rows];
+              }
+              this.showModal = false;
+              this.toast.success('Saved', 'Employee updated');
+            }
+          },
+          error: (err) => {
+            this.toast.error('Failed to update');
+            console.error(err);
+          }
+        });
     }
   }
 
