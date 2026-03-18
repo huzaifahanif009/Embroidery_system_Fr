@@ -105,4 +105,16 @@ export abstract class BaseApiService<T> {
         catchError(err => this.handleError(err))
       );
   }
+
+  /**
+   * executeCustomQuery — Call a backend-defined complex SQL query.
+   * @param key The unique key defined in the backend service.
+   * @param params Any parameters required by the query.
+   */
+  executeCustomQuery<R = any>(key: string, params: any = {}): Observable<ApiResponse<R>> {
+    return this.http.post<ApiResponse<R>>(`${this.baseUrl}/query/${key}`, params, { headers: this.headers })
+      .pipe(
+        catchError(err => this.handleError(err))
+      );
+  }
 }

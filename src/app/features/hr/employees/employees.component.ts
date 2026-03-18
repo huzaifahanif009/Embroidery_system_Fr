@@ -76,8 +76,8 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
     { field: 'empCode', headerName: 'Code', width: 100, },
     { field: 'firstName', headerName: 'First Name', flex: 1 },
     { field: 'lastName', headerName: 'Last Name', flex: 1 },
-    { field: 'department', headerName: 'Dept', width: 110 },
-    { field: 'designation', headerName: 'Designation', flex: 1 },
+    { field: 'department.name', headerName: 'Dept', width: 110 },
+    { field: 'designation.name', headerName: 'Designation', flex: 1 },
     {
       field: 'employmentType', headerName: 'Type', width: 110,
       valueFormatter: (p: { value: string }) => ({ full_time: 'Full Time', part_time: 'Part Time', contract: 'Contract', intern: 'Intern' })[p.value] ?? p.value
