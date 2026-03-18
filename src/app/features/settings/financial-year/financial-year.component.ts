@@ -8,6 +8,7 @@ import { ModalMode } from '../../../core/models';
 import { FiscalYearsService } from '@core/services/api/fiscal-years.service';
 import { SharedModule } from '@shared/gerenal/shared.module';
 import { EmbTabsetComponent } from '@shared/components/tab/tabset.component';
+import { EmbGridCustomButton } from '@shared/components/ag-grid/ag-grid.component';
 @Component({
   selector: 'emb-financial-year', standalone: true,
   imports: [SharedModule, EmbTabsetComponent],
@@ -24,7 +25,9 @@ import { EmbTabsetComponent } from '@shared/components/tab/tabset.component';
   [saving]="saving"
   (save)="onSave()"
   (cancel)="close()"
-  modalSize="lg">
+  modalSize="lg" [showExport]="true"
+  exportPrefix="financial-years"
+  (gridRefresh)="onRefresh()">
   
   <form [formGroup]="form" class="fg">
     <emb-textbox formControlName="yearCode" label="Code *" [readonly]="mode==='view'"></emb-textbox>
@@ -35,7 +38,10 @@ import { EmbTabsetComponent } from '@shared/components/tab/tabset.component';
   </form>
   <emb-tabs>
     <emb-tabset tabTitle="Periods" tabIcon="pi-calendar">
-      <erp-grid [rowData]="rows" [columnDefs]="periodsCols" [gridType]="1"></erp-grid>
+      <erp-grid [rowData]="periodRows" [showRefresh]="false" [columnDefs]="periodsCols" 
+      [pagination]="false" [customButtons]="customButtons" 
+      (customButtonClick)="onBtnClick($event)"
+      [gridType]="1"></erp-grid>
     </emb-tabset>
   </emb-tabs>
   
@@ -44,8 +50,13 @@ import { EmbTabsetComponent } from '@shared/components/tab/tabset.component';
 })
 export class FinancialYearComponent extends BaseComponent implements OnInit {
   listOptions = [{ name: 'open', value: 'open' }, { name: 'closed', value: 'closed' }, { name: 'archived', value: 'archived' }];
-
-  rows: unknown[] = []; showModal = false; mode: ModalMode = 'create';
+  customButtons: EmbGridCustomButton[] = [
+    { name: 'Periods', caption: 'Periods', icon: 'pi pi-calendar', type: 0 },
+  ];
+  rows: any[] = [];
+  periodRows: any[] = [];
+  showModal = false; mode:
+    ModalMode = 'create';
   form!: FormGroup;
   selected: Record<string, unknown> | null = null;
 
@@ -61,10 +72,16 @@ export class FinancialYearComponent extends BaseComponent implements OnInit {
     },
   ];
   periodsCols: ColDef[] = [
-    { field: 'yearCode', headerName: 'Code', width: 100 },
-    { field: 'yearName', headerName: 'Financial Year', flex: 1 },
-    { field: 'startDate', headerName: 'Start Date', flex: 1 },
-    { field: 'endDate', headerName: 'End Date', flex: 1 },
+    { field: 'periodNo', headerName: 'periodNo', width: 100, hide: true },
+    { field: 'periodName', headerName: 'Period Name', flex: 1 },
+    { field: 'startDate', headerName: 'Start', flex: 1 },
+    { field: 'endDate', headerName: 'End', flex: 1 },
+    {
+      field: 'status',
+      headerName: 'Status',
+      width: 100,
+      cellRenderer: (p: any) => `<span class="tw-badge ${p.value === 'open' ? 'tw-badge-green' : 'tw-badge-slate'}">${p.value}</span>`
+    },
   ];
   constructor(
     private toast: ToastService,
@@ -72,6 +89,9 @@ export class FinancialYearComponent extends BaseComponent implements OnInit {
     private financialYearService: FiscalYearsService
   ) { super(); }
   ngOnInit(): void {
+    this.loadData();
+  }
+  protected override loadData(): void {
     this.financialYearService.getAll().subscribe({
       next: (res) => {
         this.rows = [...(res.data.data as unknown[])];
@@ -86,12 +106,49 @@ export class FinancialYearComponent extends BaseComponent implements OnInit {
         yearName: ['', Validators.required],
         startDate: ['', Validators.required],
         endDate: ['', Validators.required],
-        status: ['']
+        status: [''],
+        details: [[]]
       });
   }
-  openCreate(): void { this.mode = 'create'; this.form.reset(); this.form.enable(); this.showModal = true; }
-  onAction(e: { action: string; data: unknown }): void {
-    const row = e.data as Record<string, unknown>;
+
+  onBtnClick(e: EmbGridCustomButton): void {
+    if (e.name === 'Periods') {
+      let startDate = this.form.get('startDate')?.value;
+      let endDate = this.form.get('endDate')?.value;
+      if (!startDate || !endDate) {
+        this.toast.error('Please select start and end date first');
+        return;
+      }
+      this.periodRows = [];
+      let start = new Date(startDate);
+      let end = new Date(endDate);
+      while (start <= end) {
+        this.periodRows.push({
+          periodNo: this.periodRows.length + 1,
+          periodName: start.toISOString().split('T')[0],
+          startDate: start.toISOString().split('T')[0],
+          endDate: start.toISOString().split('T')[0],
+          status: 'open'
+        });
+        start.setMonth(start.getMonth() + 1);
+      }
+    }
+  }
+  openCreate(): void {
+    this.mode = 'create';
+    this.form.reset();
+    this.form.enable();
+    this.periodRows = [];
+    this.showModal = true;
+  }
+  onAction(e: any): void {
+    const row = e.data;
+    if (e.action === 'create') {
+      this.openCreate();
+      return;
+    }
+
+    if (!row) return;
     if (e.action === 'delete') {
       this.financialYearService.delete(row['id'] as number).subscribe({
         next: () => {
@@ -107,7 +164,10 @@ export class FinancialYearComponent extends BaseComponent implements OnInit {
       this.selected = row;
       this.mode = e.action as ModalMode;
       this.form.patchValue(row);
-      if (e.action === 'view') this.form.disable(); else this.form.enable();
+      const details = row['details'];
+      this.periodRows = Array.isArray(details) ? [...details] : [];
+      if (e.action === 'view') this.form.disable();
+      else this.form.enable();
       this.showModal = true;
     }
   }
@@ -115,7 +175,10 @@ export class FinancialYearComponent extends BaseComponent implements OnInit {
   onSave(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.saving = true;
-    const val = this.form.getRawValue();
+    const val = {
+      ...this.form.getRawValue(),
+      details: this.periodRows
+    };
 
     if (this.mode === 'create') {
       this.financialYearService.create(val).subscribe({
@@ -152,4 +215,8 @@ export class FinancialYearComponent extends BaseComponent implements OnInit {
     }
   }
   close(): void { this.showModal = false; this.form.enable(); }
+
+  protected override beforeSave(): void {
+
+  }
 }

@@ -3,10 +3,11 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
 import { ColDef } from 'ag-grid-community';
 import { BaseComponent } from '../../../shared/components/base/base.component';
-import { ToastService } from '../../../core/services/toast.service';
 import { ModalMode } from '../../../core/models';
 import { EmployeesService } from '../../../core/services/api/employees.service';
 import { SharedModule } from '../../../shared/gerenal/shared.module';
+import { DepartmentsService } from '@core/services/api/departments.service';
+import { DesignationsService } from '@core/services/api/designations.service';
 
 @Component({
   selector: 'erp-employees',
@@ -25,7 +26,8 @@ import { SharedModule } from '../../../shared/gerenal/shared.module';
       [saving]="saving"
       (save)="onSave()"
       (cancel)="close()"
-      modalSize="lg">
+      modalSize="lg"
+      (gridRefresh)="onRefresh()">
       
       <form [formGroup]="form" class="fg">
         <emb-textbox formControlName="empCode" label="Employee Code *" [readonly]="mode==='view'" placeholder="EMP-001"></emb-textbox>
@@ -34,7 +36,7 @@ import { SharedModule } from '../../../shared/gerenal/shared.module';
         <emb-textbox formControlName="lastName" label="Last Name *" [readonly]="mode==='view'"></emb-textbox>
         <emb-textbox formControlName="phone" label="Phone" [readonly]="mode==='view'"></emb-textbox>
         <emb-textbox formControlName="email" label="Email" type="email" [readonly]="mode==='view'"></emb-textbox>
-        <emb-textbox formControlName="designation" label="Designation *" [readonly]="mode==='view'"></emb-textbox>
+        <emb-dropdown formControlName="designation" label="Designation *" [options]="designationOpts" [readonly]="mode==='view'"></emb-dropdown>
         <emb-dropdown formControlName="employmentType" label="Employment Type *" [options]="empTypeOpts" [readonly]="mode==='view'"></emb-dropdown>
         <emb-textbox formControlName="joiningDate" label="Joining Date *" type="date" [readonly]="mode==='view'"></emb-textbox>
         <emb-textbox formControlName="baseSalary" label="Base Salary (PKR) *" type="number" [readonly]="mode==='view'"></emb-textbox>
@@ -53,6 +55,7 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
   form!: FormGroup;
   selected: Record<string, unknown> | null = null;
   deptOpts: any[] = [];
+  designationOpts: any[] = [];
 
   empTypeOpts = [
     { name: 'Full Time', value: 'full_time' },
@@ -90,15 +93,14 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
   ];
 
   constructor(
-    private toast: ToastService,
     private fb: FormBuilder,
     private employeeService: EmployeesService,
+    private departmentsService: DepartmentsService,
+    private designationsService: DesignationsService,
   ) { super(); }
 
   ngOnInit(): void {
-    this.loadEmployees();
-    // In a real app, you'd load departments from a service here if needed
-    // For now assuming deptOpts are provided or loaded elsewhere
+    this.loadData();
     this.form = this.fb.group({
       empCode: ['', Validators.required],
       firstName: ['', Validators.required],
@@ -115,7 +117,7 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
     });
   }
 
-  loadEmployees(): void {
+  protected override loadData(): void {
     this.employeeService.getAll().subscribe({
       next: (res) => {
         this.rows = [...res.data.data];
@@ -124,12 +126,25 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
     });
   }
 
-  openCreate(): void {
-    this.mode = 'create';
-    this.form.reset({ employmentType: 'full_time', status: 'active', baseSalary: 0, gender: 'M' });
-    this.form.enable();
-    setTimeout(() => this.showModal = true, 50);
+  loadDepartments() {
+    this.departmentsService.getAll().subscribe({
+      next: (res) => {
+        this.deptOpts = res.data.data.map((x: any) => ({ name: x.name, value: x.id }));
+      },
+      error: (err) => console.error(err)
+    });
   }
+
+  loadDesignations() {
+    this.designationsService.getAll().subscribe({
+      next: (res) => {
+        this.designationOpts = res.data.data.map((x: any) => ({ name: x.name, value: x.id }));
+      },
+      error: (err) => console.error(err)
+    });
+  }
+
+
 
   onAction(e: { action: string; data: unknown }): void {
     const row = e.data as Record<string, unknown>;
@@ -137,14 +152,16 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
       this.employeeService.delete(row['id'] as number).subscribe({
         next: () => {
           this.rows = this.rows.filter(x => (x as any).id !== row['id']);
-          this.toast.success('Deleted');
+          this.showSuccess('Deleted');
         },
         error: (err) => {
-          this.toast.error('Failed to delete');
+          this.showErrors('Failed to delete');
           console.error(err);
         }
       });
     } else {
+      this.loadDepartments();
+      this.loadDesignations();
       this.selected = row;
       this.mode = e.action as ModalMode;
       this.form.patchValue(row);
@@ -154,10 +171,13 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
   }
 
   onSave(): void {
+    debugger
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.saving = true;
-    const val = this.form.getRawValue();
-
+    const val = {
+      ...this.form.getRawValue(),
+      baseSalary: Number(this.form.get('baseSalary')?.value)
+    };
     if (this.mode === 'create') {
       this.employeeService.create(val)
         .pipe(finalize(() => this.saving = false))
@@ -166,11 +186,11 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
             if (res.success) {
               this.rows = [...this.rows, res.data];
               this.showModal = false;
-              this.toast.success('Saved', 'Employee created');
+              this.showSuccess('Saved', 'Employee created');
             }
           },
           error: (err) => {
-            this.toast.error('Failed to create');
+            this.showErrors('Failed to create');
             console.error(err);
           }
         });
@@ -186,11 +206,11 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
                 this.rows = [...this.rows];
               }
               this.showModal = false;
-              this.toast.success('Saved', 'Employee updated');
+              this.showSuccess('Saved', 'Employee updated');
             }
           },
           error: (err) => {
-            this.toast.error('Failed to update');
+            this.showErrors('Failed to update');
             console.error(err);
           }
         });

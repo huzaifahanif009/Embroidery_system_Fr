@@ -24,6 +24,9 @@ import { SharedModule } from '@shared/gerenal/shared.module';
   [saving]="saving"
   (save)="onSave()"
   (cancel)="close()"
+  [showExport]="true"
+  (gridRefresh)="onRefresh()"
+  exportPrefix="designations"
   modalWidth="580px">
   
   <form [formGroup]="form" class="fg">
@@ -57,6 +60,9 @@ export class DesignationsComponent extends BaseComponent implements OnInit {
     private designationService: DesignationsService
   ) { super(); }
   ngOnInit(): void {
+    this.loadData();
+  }
+  protected override loadData(): void {
     this.designationService.getAll().subscribe({
       next: (res) => {
         this.rows = [...(res.data.data as unknown[])];

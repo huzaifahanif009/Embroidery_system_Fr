@@ -23,7 +23,9 @@ import { SharedModule } from '@shared/gerenal/shared.module';
   [saving]="saving"
   (save)="onSave()"
   (cancel)="close()"
-  modalWidth="580px">
+  modalWidth="580px" [showExport]="true"
+  exportPrefix="departments"
+  (gridRefresh)="onRefresh()">
   
   <form [formGroup]="form" class="fg">
     <emb-textbox formControlName="code" label="Code *" [readonly]="mode==='view'"></emb-textbox>
@@ -55,6 +57,9 @@ export class DepartmentsComponent extends BaseComponent implements OnInit {
     private departmentService: DepartmentsService
   ) { super(); }
   ngOnInit(): void {
+    this.loadData();
+  }
+  protected override loadData(): void {
     this.departmentService.getAll().subscribe({
       next: (res) => {
         this.rows = [...(res.data.data as unknown[])];

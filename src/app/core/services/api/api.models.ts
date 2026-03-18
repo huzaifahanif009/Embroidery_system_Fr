@@ -50,7 +50,7 @@ export interface Employee {
   firstName: string;
   lastName: string;
   departmentId?: number;
-  designationId?: number;
+  designation?: number;
   email?: string;
   phone?: string;
   joiningDate?: string | Date;

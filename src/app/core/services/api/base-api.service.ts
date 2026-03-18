@@ -55,7 +55,6 @@ export abstract class BaseApiService<T> {
   }
 
   getAll(params?: any): Observable<ApiResponse<PaginatedData<T>>> {
-    this.log('Fetching all records', params);
     let httpParams = new HttpParams();
     if (params) {
       Object.keys(params).forEach(key => {
@@ -66,54 +65,43 @@ export abstract class BaseApiService<T> {
     }
     return this.http.get<ApiResponse<PaginatedData<T>>>(this.baseUrl, { headers: this.headers, params: httpParams })
       .pipe(
-        tap(res => this.log('Fetched all', res)),
         catchError(err => this.handleError(err))
       );
   }
 
   getById(id: string | number): Observable<ApiResponse<T>> {
-    this.log(`Fetching record ${id}`);
     return this.http.get<ApiResponse<T>>(`${this.baseUrl}/${id}`, { headers: this.headers })
       .pipe(
-        tap(res => this.log(`Fetched record ${id}`, res)),
         catchError(err => this.handleError(err))
       );
   }
 
   create(data: Partial<T>): Observable<ApiResponse<T>> {
-    this.log('Creating record', data);
     return this.http.post<ApiResponse<T>>(this.baseUrl, data, { headers: this.headers })
       .pipe(
-        tap(res => this.log('Created record', res)),
         catchError(err => this.handleError(err))
       );
   }
 
   update(id: string | number, data: Partial<T>): Observable<ApiResponse<T>> {
-    this.log(`Updating record ${id}`, data);
     // NestJS commonly uses PATCH for partial updates, but PUT is also common. We use PATCH here.
     return this.http.patch<ApiResponse<T>>(`${this.baseUrl}/${id}`, data, { headers: this.headers })
       .pipe(
-        tap(res => this.log(`Updated record ${id}`, res)),
         catchError(err => this.handleError(err))
       );
   }
 
   delete(id: string | number): Observable<ApiResponse<void>> {
-    this.log(`Deleting record ${id}`);
     return this.http.delete<ApiResponse<void>>(`${this.baseUrl}/${id}`, { headers: this.headers })
       .pipe(
-        tap(res => this.log(`Deleted record ${id}`, res)),
         catchError(err => this.handleError(err))
       );
   }
 
   // Extra common routes
   restore(id: string | number): Observable<ApiResponse<T>> {
-    this.log(`Restoring record ${id}`);
     return this.http.patch<ApiResponse<T>>(`${this.baseUrl}/${id}/restore`, {}, { headers: this.headers })
       .pipe(
-        tap(res => this.log(`Restored record ${id}`, res)),
         catchError(err => this.handleError(err))
       );
   }

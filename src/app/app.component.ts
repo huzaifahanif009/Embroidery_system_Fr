@@ -8,4 +8,4 @@ import { ConfirmDialogComponent } from './shared/components/confirm-dialog/confi
   imports: [RouterOutlet, ToastModule, ConfirmDialogComponent],
   template: `<p-toast position="top-right"></p-toast><erp-confirm></erp-confirm><router-outlet></router-outlet>`
 })
-export class AppComponent {}
+export class AppComponent { }

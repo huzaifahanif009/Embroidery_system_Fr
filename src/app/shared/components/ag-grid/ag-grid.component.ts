@@ -1,17 +1,19 @@
 import {
   Component, Input, Output, EventEmitter,
-  OnChanges, ViewChild, ElementRef, AfterViewInit
+  OnChanges, HostListener
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 import { AgGridAngular } from 'ag-grid-angular';
 import {
   ColDef, GridReadyEvent, GridApi, RowDoubleClickedEvent,
   themeQuartz, colorSchemeLightWarm, RowSelectionOptions
 } from 'ag-grid-community';
 import { GridActionsComponent } from './grid-actions.component';
+import * as XLSX from 'xlsx';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { ModalComponent } from '../modal/modal.component';
 import { ModalMode } from '../../../core/models';
 
@@ -53,14 +55,14 @@ const myTheme = themeQuartz.withPart(colorSchemeLightWarm).withParams({
 @Component({
   selector: 'erp-grid',
   standalone: true,
-  imports: [CommonModule, FormsModule, AgGridAngular, ModalComponent],
+  imports: [CommonModule, FormsModule, AgGridAngular, ModalComponent,],
   template: `
     <div style="display:flex;flex-direction:column;gap:8px">
 
       <!-- ═══════════════════════════════════════════
            TOOLBAR
            ═══════════════════════════════════════════ -->
-      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;
+      <div *ngIf="showToolBar" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;
                   padding:6px 8px;background:#f5f4ef;
                   border:1px solid #e8e6df;border-radius:8px 8px 0 0">
 
@@ -120,7 +122,7 @@ const myTheme = themeQuartz.withPart(colorSchemeLightWarm).withParams({
                    border:1px solid #d0cdc3;border-radius:5px;cursor:pointer;color:#3d3d3a"
             [disabled]="btn.disabled"
             (click)="onCustomButtonClick(btn)">
-            <i *ngIf="btn.icon" [class]="'fa ' + btn.icon"></i>
+            <i *ngIf="btn.icon" [class]="'pi ' + btn.icon"></i>
             {{ btn.caption }}
           </button>
 
@@ -211,27 +213,167 @@ const myTheme = themeQuartz.withPart(colorSchemeLightWarm).withParams({
         <!-- END CUSTOM BUTTONS -->
 
         <!-- ── RIGHT SIDE: search + record count ── -->
-        <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
-          <div *ngIf="showSearch" style="position:relative">
-            <i class="pi pi-search"
-              style="position:absolute;left:8px;top:50%;transform:translateY(-50%);
-                     color:#9a9688;font-size:12px"></i>
-            <input
-              [(ngModel)]="quickFilter"
-              (ngModelChange)="onQuickFilter($event)"
-              placeholder="Search..."
-              style="width:200px;padding:5px 8px 5px 28px;border:1px solid #e8e6df;
-                     border-radius:6px;font-size:12px;font-family:inherit;
-                     outline:none;background:white;color:#1c2420"
-              (focus)="$any($event.target).style.borderColor='#c8b560'"
-              (blur)="$any($event.target).style.borderColor='#e8e6df'" />
-          </div>
-          <span style="font-size:12px;color:#9a9688;white-space:nowrap">
-            {{ totalRows | number }} records
-          </span>
-        </div>
+        <!-- ── RIGHT SIDE ── -->
+<div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+<!-- Search -->
+  <div *ngIf="showSearch" style="position:relative">
+    <i class="pi pi-search"
+      style="position:absolute;left:8px;top:50%;transform:translateY(-50%);
+             color:#9a9688;font-size:12px"></i>
+    <input
+      [(ngModel)]="quickFilter"
+      (ngModelChange)="onQuickFilter($event)"
+      placeholder="Search..."
+      style="width:200px;padding:5px 8px 5px 28px;border:1px solid #e8e6df;
+             border-radius:6px;font-size:12px;font-family:inherit;
+             outline:none;background:white;color:#1c2420"
+      (focus)="$any($event.target).style.borderColor='#c8b560'"
+      (blur)="$any($event.target).style.borderColor='#e8e6df'" />
+  </div>
+  <!-- Export menu -->
+  <div *ngIf="showExport" style="position:relative">
+    <button
+      style="display:inline-flex;align-items:center;gap:5px;padding:5px 6px;
+             font-size:12px;font-family:inherit;background:#fff;
+             border:1px solid #d0cdc3;border-radius:5px;cursor:pointer;color:#3d3d3a"
+      (click)="toggleExportMenu($event)">
+      <i class="pi pi-download"></i>
+    </button>
+    <div *ngIf="exportMenuOpen"
+      style="position:absolute;right:0;top:calc(100% + 4px);z-index:1000;
+             background:#fff;border:1px solid #e8e6df;border-radius:8px;
+             box-shadow:0 4px 16px rgba(0,0,0,.12);min-width:120px;overflow:hidden"
+      (click)="$event.stopPropagation()">
+      <button (click)="exportExcel()"
+        style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 14px;
+               font-size:12px;font-family:inherit;background:transparent;
+               border:none;cursor:pointer;color:#3d3d3a;border-bottom:1px solid #f0eee4">
+        <i class="pi pi-file-excel" style="color:#1d7044"></i> Excel
+      </button>
+      <button (click)="exportCSV()"
+        style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 14px;
+               font-size:12px;font-family:inherit;background:transparent;
+               border:none;cursor:pointer;color:#3d3d3a;border-bottom:1px solid #f0eee4">
+        <i class="pi pi-file" style="color:#5a7a2b"></i> CSV
+      </button>
+      <button (click)="exportPDF()"
+        style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 14px;
+               font-size:12px;font-family:inherit;background:transparent;
+               border:none;cursor:pointer;color:#3d3d3a">
+        <i class="pi pi-file-pdf" style="color:#df4f4f"></i> PDF
+      </button>
+    </div>
+  </div>
 
+  <!-- Floating Filter Toggle -->
+<button *ngIf="showFilterToggle"
+  style="display:inline-flex;align-items:center;justify-content:center;
+         width:28px;height:28px;background:#fff;border:1px solid #d0cdc3;
+         border-radius:5px;cursor:pointer;font-size:12px"
+  [style.color]="floatingFilterOn ? '#c8b560' : '#5f6368'"
+  [style.border-color]="floatingFilterOn ? '#c8b560' : '#d0cdc3'"
+  title="Toggle Column Filters"
+  (click)="toggleFloatingFilter($event)">
+  <i class="pi pi-filter"></i>
+</button>
+<!-- Column Panel -->
+<div *ngIf="showColumnPanel" style="position:relative">
+  <button
+    style="display:inline-flex;align-items:center;justify-content:center;
+           width:28px;height:28px;background:#fff;border:1px solid #d0cdc3;
+           border-radius:5px;cursor:pointer;color:#5f6368;font-size:12px"
+    title="Show/Hide Columns"
+    (click)="toggleColumnPanel($event)">
+    <i class="pi pi-table"></i>
+  </button>
+  <div *ngIf="columnPanelOpen"
+    style="position:absolute;right:0;top:calc(100% + 4px);z-index:1000;
+           background:#fff;border:1px solid #e8e6df;border-radius:8px;
+           box-shadow:0 4px 16px rgba(0,0,0,.12);min-width:180px;overflow:hidden"
+    (click)="$event.stopPropagation()">
+    <div style="padding:8px 12px 6px;font-size:11px;font-weight:600;
+                color:#6b7060;border-bottom:1px solid #e8e6df;
+                text-transform:uppercase;letter-spacing:.6px">
+      Columns
+    </div>
+    <div style="max-height:260px;overflow-y:auto;padding:4px 0">
+      <label *ngFor="let col of visibleColumns"
+        style="display:flex;align-items:center;gap:8px;padding:6px 12px;
+               font-size:12px;color:#3d3d3a;cursor:pointer"
+        (mouseenter)="$any($event.target).style.background='#f5f4ef'"
+        (mouseleave)="$any($event.target).style.background='transparent'">
+        <input
+          type="checkbox"
+          [checked]="col.visible"
+          (change)="toggleColumnVisibility(col.field)" />
+        {{ col.headerName }}
+      </label>
+    </div>
+  </div>
+</div>
+  <!-- Refresh -->
+  <button *ngIf="showRefresh"
+    style="display:inline-flex;align-items:center;justify-content:center;
+           width:28px;height:28px;background:#fff;border:1px solid #d0cdc3;
+           border-radius:5px;cursor:pointer;color:#5f6368;font-size:12px"
+    title="Refresh"
+    (click)="refreshGrid()">
+    <i class="pi pi-sync" [class.pi-spin]="isRefreshing"></i>
+  </button>
+
+  <!-- Pagination -->
+  <div *ngIf="pagination"
+    style="display:inline-flex;align-items:center;border:1px solid #d0cdc3;
+           border-radius:5px;overflow:hidden;background:#fff">
+    <button
+      style="width:26px;height:26px;border:none;background:transparent;
+             cursor:pointer;color:#5f6368;font-size:11px;
+             display:flex;align-items:center;justify-content:center"
+      title="First" (click)="firstPage()">
+      <i class="pi pi-angle-double-left"></i>
+    </button>
+    <button
+      style="width:26px;height:26px;border:none;background:transparent;
+             cursor:pointer;color:#5f6368;font-size:11px;
+             display:flex;align-items:center;justify-content:center;
+             border-left:1px solid #e8e6df"
+      title="Previous" (click)="prevPage()">
+      <i class="pi pi-arrow-left"></i>
+    </button>
+    <span
+      style="padding:0 8px;font-size:11px;color:#5f6368;white-space:nowrap;
+             border-left:1px solid #e8e6df;border-right:1px solid #e8e6df;
+             line-height:26px">
+      {{ currentPage }} of {{ totalPages }}
+    </span>
+    <button
+      style="width:26px;height:26px;border:none;background:transparent;
+             cursor:pointer;color:#5f6368;font-size:11px;
+             display:flex;align-items:center;justify-content:center;
+             border-right:1px solid #e8e6df"
+      title="Next" (click)="nextPage()">
+      <i class="pi pi-arrow-right"></i>
+    </button>
+    <button
+      style="width:26px;height:26px;border:none;background:transparent;
+             cursor:pointer;color:#5f6368;font-size:11px;
+             display:flex;align-items:center;justify-content:center"
+      title="Last" (click)="lastPage()">
+      <i class="pi pi-angle-double-right"></i>
+    </button>
+    <select
+      [(ngModel)]="pageSize"
+      (ngModelChange)="onPageSizeChange()"
+      style="height:26px;border:none;border-left:1px solid #e8e6df;
+             font-size:11px;font-family:inherit;background:#fff;
+             color:#5f6368;padding:0 4px;cursor:pointer;outline:none">
+      <option *ngFor="let s of pageSizeOptions" [value]="s">{{ s }}</option>
+    </select>
+  </div>
+
+</div>
       </div>
+
       <!-- END TOOLBAR -->
 
       <!-- ═══════════════════════════════════════════
@@ -245,11 +387,14 @@ const myTheme = themeQuartz.withPart(colorSchemeLightWarm).withParams({
         [defaultColDef]="defaultColDef"
         [pagination]="pagination"
         [paginationPageSize]="pageSize"
-        [paginationPageSizeSelector]="[10,15,25,50]"
+        [paginationPageSizeSelector]="false"
+        [suppressPaginationPanel]="true"
         [animateRows]="true"
         [rowSelection]="rowSelection"
+        [getRowStyle]="getRowStyle"
         (gridReady)="onGridReady($event)"
-        (rowDoubleClicked)="onRowDoubleClicked($event)">
+        (rowDoubleClicked)="onRowDoubleClicked($event)"
+        (paginationChanged)="onPaginationChanged()">
       </ag-grid-angular>
 
     </div>
@@ -278,6 +423,7 @@ export class ErpGridComponent implements OnChanges {
   @Input() pagination = true;
   @Input() pageSize = 15;
   @Input() showSearch = true;
+  @Input() showToolBar = true;
 
   // 0=INPUT 1=LOOKUP 2=SELECTION 3=ACTIONS 4=EXPORT 5=LIST
   @Input() gridType: 0 | 1 | 2 | 3 | 4 | 5 = 3;
@@ -289,13 +435,20 @@ export class ErpGridComponent implements OnChanges {
   @Input() hideUnselect: boolean = false;
   @Input() hideNewBtn: boolean = false;
   @Input() newBtnCaption: string = 'New';
-
+  @Input() showExport: boolean = false;
+  @Input() exportPrefix: string = 'export';
+  @Input() showRefresh: boolean = true;
+  @Input() autoRefresh: boolean = false;
+  @Input() showColumnPanel: boolean = true;
+  @Input() showFilterToggle: boolean = true;
+  @Input() getRowStyle: (params: any) => any = () => null;
   // Custom buttons
   @Input() customButtons: EmbGridCustomButton[] = [];
 
   // ── Outputs ───────────────────────────────────────────────────────────────
   @Output() rowAction = new EventEmitter<{ action: string; data: unknown }>();
   @Output() customButtonClick = new EventEmitter<EmbGridCustomButton>();
+  @Output() gridRefresh = new EventEmitter<void>();
   @Output() save = new EventEmitter<void>();
   @Output() cancel = new EventEmitter<void>();
 
@@ -311,7 +464,15 @@ export class ErpGridComponent implements OnChanges {
   // ── Internal state ────────────────────────────────────────────────────────
   theme = myTheme;
   quickFilter = '';
+  exportMenuOpen = false;
+  columnPanelOpen = false;
+  floatingFilterOn = false;
+  visibleColumns: { field: string; headerName: string; visible: boolean }[] = [];
+  isRefreshing = false;
   totalRows = 0;
+  currentPage = 1;
+  totalPages = 1;
+  pageSizeOptions = [10, 15, 25, 50, 100];
   processedColumnDefs: ColDef[] = [];
   rowSelection!: RowSelectionOptions | undefined;
   private gridApi!: GridApi;
@@ -328,7 +489,11 @@ export class ErpGridComponent implements OnChanges {
     this.showModal = val;
     this.showModalChange.emit(val);
   }
-
+  @HostListener('window:click')
+  onWindowClick(): void {
+    this.exportMenuOpen = false;
+    this.columnPanelOpen = false;
+  }
   constructor(private confirmationService: ConfirmationService) { }
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -341,6 +506,7 @@ export class ErpGridComponent implements OnChanges {
   onGridReady(p: GridReadyEvent): void {
     this.gridApi = p.api;
     this.totalRows = this.rowData?.length ?? 0;
+    this.updatePaginationInfo();
   }
 
   // ── Search ────────────────────────────────────────────────────────────────
@@ -406,7 +572,131 @@ export class ErpGridComponent implements OnChanges {
   getSelectedRows(): unknown[] {
     return this.gridApi?.getSelectedRows() ?? [];
   }
+  // ── Refresh ───────────────────────────────────────────────
+  refreshGrid(): void {
+    this.isRefreshing = true;
+    this.gridRefresh.emit();
+    setTimeout(() => (this.isRefreshing = false), 600);
+  }
 
+  // ── Pagination ────────────────────────────────────────────
+  firstPage(): void {
+    this.gridApi?.paginationGoToFirstPage();
+    this.updatePaginationInfo();
+  }
+  prevPage(): void {
+    this.gridApi?.paginationGoToPreviousPage();
+    this.updatePaginationInfo();
+  }
+  nextPage(): void {
+    this.gridApi?.paginationGoToNextPage();
+    this.updatePaginationInfo();
+  }
+  lastPage(): void {
+    this.gridApi?.paginationGoToLastPage();
+    this.updatePaginationInfo();
+  }
+  onPageSizeChange(): void {
+    this.gridApi?.setGridOption('paginationPageSize', this.pageSize);
+    this.gridApi?.paginationGoToFirstPage();
+    this.updatePaginationInfo();
+  }
+  onPaginationChanged(): void {
+    this.updatePaginationInfo();
+  }
+  private updatePaginationInfo(): void {
+    if (!this.gridApi) return;
+    this.currentPage = (this.gridApi.paginationGetCurrentPage() ?? 0) + 1;
+    this.totalPages = this.gridApi.paginationGetTotalPages() ?? 1;
+  }
+  // ── Floating Filter Toggle ────────────────────────────────
+  toggleFloatingFilter(e: Event): void {
+    e.stopPropagation();
+    this.floatingFilterOn = !this.floatingFilterOn;
+    const updatedCols = this.processedColumnDefs.map(col => ({
+      ...col,
+      floatingFilter: this.floatingFilterOn,
+    }));
+    this.processedColumnDefs = updatedCols;
+    this.gridApi?.setGridOption('columnDefs', updatedCols);
+    this.gridApi?.refreshHeader();
+  }
+  // ── Column Panel ──────────────────────────────────────────
+  toggleColumnPanel(e: Event): void {
+    e.stopPropagation();
+    this.columnPanelOpen = !this.columnPanelOpen;
+    this.exportMenuOpen = false;
+    if (this.columnPanelOpen) this.buildVisibleColumnsList();
+  }
+
+  private buildVisibleColumnsList(): void {
+    if (!this.gridApi) return;
+    const allCols = this.gridApi.getColumns() ?? [];
+    this.visibleColumns = allCols
+      .filter((c: any) => !['lineindex', 'actionid', 'selectedCol']
+        .includes(c.getColId()))
+      .map((c: any) => ({
+        field: c.getColId(),
+        headerName: c.getColDef().headerName ?? c.getColId(),
+        visible: c.isVisible(),
+      }));
+  }
+
+  toggleColumnVisibility(field: string): void {
+    const col = this.visibleColumns.find(c => c.field === field);
+    if (!col) return;
+    col.visible = !col.visible;
+    this.gridApi?.setColumnsVisible([field], col.visible);
+  }
+  toggleExportMenu(e: Event): void {
+    e.stopPropagation();
+    this.exportMenuOpen = !this.exportMenuOpen;
+  }
+
+  private getExportData(): any[] {
+    const result: any[] = [];
+    this.gridApi?.forEachNodeAfterFilter((node: any) => {
+      const obj: any = {};
+      (this.columnDefs || []).forEach(col => {
+        if (col.field && col.field !== 'actionid' && col.field !== 'selectedCol') {
+          obj[col.headerName ?? col.field] = node.data[col.field];
+        }
+      });
+      result.push(obj);
+    });
+    return result;
+  }
+
+  exportExcel(): void {
+    const data = this.getExportData();
+    if (!data.length) return;
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+    XLSX.writeFile(wb, `${this.exportPrefix}.xlsx`);
+    this.exportMenuOpen = false;
+  }
+
+  exportCSV(): void {
+    this.gridApi?.exportDataAsCsv({ fileName: this.exportPrefix });
+    this.exportMenuOpen = false;
+  }
+
+  exportPDF(): void {
+    const data = this.getExportData();
+    if (!data.length) return;
+    const doc = new jsPDF('l');
+    const cols = Object.keys(data[0]);
+    const rows = data.map((r: any) => cols.map(c => r[c]));
+    autoTable(doc, {
+      head: [cols],
+      body: rows,
+      styles: { fontSize: 9, overflow: 'linebreak' },
+      margin: { top: 14, bottom: 14 },
+    });
+    doc.save(`${this.exportPrefix}.pdf`);
+    this.exportMenuOpen = false;
+  }
   // ── Build columns ─────────────────────────────────────────────────────────
   private buildColumns(): void {
     const baseCols = this.columnDefs || [];

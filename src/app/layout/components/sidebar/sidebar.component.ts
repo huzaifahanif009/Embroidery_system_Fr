@@ -150,6 +150,13 @@ export class SidebarComponent {
       ]
     },
     {
+      label: 'HR Management', icon: '', children: [
+        { label: 'Employees', icon: 'pi-id-card', route: '/hr/employees' },
+        { label: 'Attendance', icon: 'pi-calendar', route: '/hr/attendance' },
+        { label: 'Leaves', icon: 'pi-calendar-times', route: '/hr/leaves' },
+      ]
+    },
+    {
       label: 'Order & Production', icon: '', children: [
         { label: 'Orders', icon: 'pi-file', route: '/orders/work-orders', badge: 14 },
         { label: 'Production', icon: 'pi-wrench', route: '/orders/production', badge: 3 },
@@ -172,13 +179,7 @@ export class SidebarComponent {
         { label: 'Reorder', icon: 'pi-bell', route: '/inventory/reorder' },
       ]
     },
-    {
-      label: 'HR Management', icon: '', children: [
-        { label: 'Employees', icon: 'pi-id-card', route: '/hr/employees' },
-        { label: 'Attendance', icon: 'pi-calendar', route: '/hr/attendance' },
-        { label: 'Leaves', icon: 'pi-calendar-times', route: '/hr/leaves' },
-      ]
-    },
+
     {
       label: 'Machine Management', icon: '', children: [
         { label: 'Machine Registry', icon: 'pi-cog', route: '/machines/registry' },

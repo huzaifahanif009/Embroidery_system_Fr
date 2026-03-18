@@ -1,121 +1,112 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ColDef } from 'ag-grid-community';
-import { DialogModule } from 'primeng/dialog';
 import { BaseComponent } from '../../../shared/components/base/base.component';
-import { ErpGridComponent } from '../../../shared/components/ag-grid/ag-grid.component';
-import { ModalComponent } from '../../../shared/components/modal/modal.component';
-import { MockService } from '../../../shared/services/mock.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ModalMode } from '../../../core/models';
-import { ConfirmationService } from 'primeng/api';
 import { SharedModule } from '@shared/gerenal/shared.module';
+import { TenantsService } from '@core/services/api/tenants.service';
+import { finalize } from 'rxjs';
 
 @Component({
   selector: 'erp-tenants',
   standalone: true,
   imports: [SharedModule],
   template: `
-    <erp-grid 
-  [rowData]="rows" 
-  [columnDefs]="cols" 
-  [gridType]="3" 
-  (rowAction)="onAction($event)"
-  [(showModal)]="showModal"
-  [modalHeader]="modalTitle"
-  [modalMode]="mode"
-  [saving]="saving"
-  (save)="onSave()"
-  (cancel)="close()"
-  modalWidth="580px">
-  
-  <form [formGroup]="form" class="fg">
-    <emb-textbox formControlName="tenantCode" label="Tenant Code *" [readonly]="mode==='view'"></emb-textbox>
-    <emb-textbox formControlName="firstName" label="First Name *" [readonly]="mode==='view'"></emb-textbox>
-    <emb-textbox formControlName="lastName" label="Last Name *" [readonly]="mode==='view'"></emb-textbox>
+  <erp-grid 
+    [rowData]="rows" 
+    [columnDefs]="cols" 
+    [gridType]="3" 
+    (rowAction)="onAction($event)"
+    [(showModal)]="showModal"
+    [modalHeader]="modalTitle"
+    [modalMode]="mode"
+    [saving]="saving"
+    (save)="onSave()"
+    (cancel)="close()"
+    [showExport]="true"
+    (gridRefresh)="onRefresh()"
+    exportPrefix="designations"
+    modalWidth="580px">
     
-  </form>
-  
-</erp-grid>
-  `,
-  styles: [`.fg { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .fc { grid-column: 1 / -1; }`]
+    <form [formGroup]="form" class="fg">
+      <emb-textbox formControlName="name" label="Name *" [readonly]="mode==='view'"></emb-textbox>
+      <emb-textbox formControlName="slug" label="Slug *" [readonly]="mode==='view'"></emb-textbox>
+      <emb-dropdown formControlName="planId" label="Plan *" [options]="listOptions" [readonly]="mode==='view'"></emb-dropdown>
+      <emb-textbox formControlName="dbSchema" label="DB Schema *" [readonly]="mode==='view'"></emb-textbox>
+      <emb-textbox formControlName="settings" label="Settings *" [readonly]="mode==='view'"></emb-textbox>
+      <emb-dropdown formControlName="isActive" label="Status" [options]="listOptions" [readonly]="mode==='view'"></emb-dropdown>
+    </form>
+    
+  </erp-grid>`,
+  styles: ['.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px;}.fc{grid-column:1/-1;}']
 })
 export class TenantComponent extends BaseComponent implements OnInit {
-  rows: unknown[] = [];
-  showModal = false;
-  mode: ModalMode = 'create';
+  listOptions = [{ name: 'Active', value: true }, { name: 'Inactive', value: false }];
+
+  rows: unknown[] = []; showModal = false; mode: ModalMode = 'create';
   form!: FormGroup;
   selected: Record<string, unknown> | null = null;
-  deptOpts = ['Production', 'HR', 'Finance', 'QC', 'IT'];
 
-  get modalTitle(): string {
-    return ({ create: 'New Tenant', edit: 'Edit Tenant', view: 'Tenant Details' } as Record<string, string>)[this.mode];
-  }
-
+  get modalTitle() { return ({ create: 'New', edit: 'Edit', view: 'View' } as Record<string, string>)[this.mode] + ' Designations'; }
   cols: ColDef[] = [
-    { field: 'tenantCode', headerName: 'Code', width: 100, },
-    { field: 'firstName', headerName: 'First Name', flex: 1 },
-    { field: 'lastName', headerName: 'Last Name', flex: 1 },
-    { field: 'department', headerName: 'Dept', width: 110 },
-    { field: 'designation', headerName: 'Designation', flex: 1 },
+    { field: 'name', headerName: 'Name', flex: 1 },
+    { field: 'slug', headerName: 'Slug', flex: 1 },
+    { field: 'planId', headerName: 'Plan', flex: 1 },
+    { field: 'dbSchema', headerName: 'DB Schema', flex: 1 },
     {
-      field: 'employmentType', headerName: 'Type', width: 110,
-      valueFormatter: (p: { value: string }) => ({ full_time: 'Full Time', part_time: 'Part Time', contract: 'Contract', intern: 'Intern' })[p.value] ?? p.value
-    },
-    {
-      field: 'baseSalary', headerName: 'Salary', width: 120,
-      valueFormatter: (p: { value: number }) => `PKR ${Number(p.value).toLocaleString()}`
-    },
-    {
-      field: 'status', headerName: 'Status', width: 90,
-      cellRenderer: (p: { value: string }) => `<span class="tw-badge ${p.value === 'active' ? 'tw-badge-green' : 'tw-badge-slate'}">${p.value}</span>`
-    },
+      field: 'isActive', headerName: 'Status', width: 80,
+      cellRenderer: (p: any) => `<span class="tw-badge ${p.value === true ? 'tw-badge-green' : 'tw-badge-slate'}">${p.value}</span>`
+    }
   ];
-
   constructor(
-    private mock: MockService,
     private toast: ToastService,
     private fb: FormBuilder,
-    private confirm: ConfirmationService,
+    private tenantService: TenantsService
   ) { super(); }
-
   ngOnInit(): void {
-    this.rows = [...this.mock.employees];
-    this.form = this.fb.group({
-      empCode: ['', Validators.required],
-      firstName: ['', Validators.required],
-      lastName: ['', Validators.required],
-      department: ['', Validators.required],
-      phone: [''],
-      email: [''],
-      designation: ['', Validators.required],
-      employmentType: ['full_time', Validators.required],
-      joiningDate: ['', Validators.required],
-      baseSalary: [0, [Validators.required, Validators.min(0)]],
-      status: ['active'],
-      gender: ['M'],
+    this.loadData();
+    this.form = this.fb.group(
+      {
+        name: ['', Validators.required],
+        slug: ['', Validators.required],
+        planId: ['', Validators.required],
+        dbSchema: ['', Validators.required],
+        settings: ['', Validators.required],
+        isActive: [true]
+      });
+  }
+  protected override loadData(): void {
+    this.tenantService.getAll().subscribe({
+      next: (res) => {
+        this.rows = [...(res.data.data as unknown[])];
+      },
+      error: (err) => {
+        console.error(err);
+      }
     });
+    this.form = this.fb.group(
+      {
+        code: ['', Validators.required],
+        name: ['', Validators.required],
+        isActive: [true]
+      });
   }
-
   openCreate(): void {
-    this.mode = 'create';
-    this.form.reset({ employmentType: 'full_time', status: 'active', baseSalary: 0, gender: 'M' });
-    this.form.enable();
-    this.showModal = true;
+    this.mode = 'create'; this.form.reset({ isActive: true }); this.form.enable();
+    setTimeout(() => this.showModal = true, 50);
   }
-
   onAction(e: { action: string; data: unknown }): void {
     const row = e.data as Record<string, unknown>;
     if (e.action === 'delete') {
-      this.confirm.confirm({
-        message: `Delete employee ${row['empCode']}?`, header: 'Confirm Delete',
-        icon: 'pi pi-exclamation-triangle',
-        accept: () => {
-          this.mock.employees = this.mock.employees.filter(x => x.id !== row['id']);
-          this.rows = [...this.mock.employees];
+      this.tenantService.delete(row['id'] as number).subscribe({
+        next: () => {
+          this.rows = this.rows.filter(x => (x as any).id !== row['id']);
           this.toast.success('Deleted');
+        },
+        error: (err) => {
+          this.toast.error('Failed to delete');
+          console.error(err);
         }
       });
     } else {
@@ -123,27 +114,52 @@ export class TenantComponent extends BaseComponent implements OnInit {
       this.mode = e.action as ModalMode;
       this.form.patchValue(row);
       if (e.action === 'view') this.form.disable(); else this.form.enable();
-      this.showModal = true;
+      setTimeout(() => this.showModal = true, 50);
     }
   }
 
   onSave(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
     this.saving = true;
-    setTimeout(() => {
-      const val = this.form.getRawValue();
-      if (this.mode === 'create') {
-        this.mock.employees.push({ ...val, id: Date.now().toString() } as typeof this.mock.employees[0]);
-      } else if (this.selected) {
-        const idx = this.mock.employees.findIndex(x => x.id === this.selected!['id']);
-        if (idx > -1) this.mock.employees[idx] = { ...this.mock.employees[idx], ...val };
-      }
-      this.rows = [...this.mock.employees];
-      this.saving = false;
-      this.showModal = false;
-      this.toast.success('Saved', `Employee ${this.mode === 'create' ? 'created' : 'updated'}`);
-    }, 500);
-  }
+    const val = this.form.getRawValue();
 
+    if (this.mode === 'create') {
+      this.tenantService.create(val)
+        .pipe(finalize(() => this.saving = false))
+        .subscribe({
+          next: (res: any) => {
+            if (res.success) {
+              this.rows = [...this.rows, res.data];
+              this.showModal = false;
+              this.toast.success('Tenant created');
+            }
+          },
+          error: (err) => {
+            this.toast.error('Failed to create tenant');
+            console.error(err);
+          }
+        });
+    } else if (this.selected) {
+      this.tenantService.update(this.selected['id'] as number, val)
+        .pipe(finalize(() => this.saving = false))
+        .subscribe({
+          next: (res: any) => {
+            if (res.success) {
+              const idx = this.rows.findIndex(x => (x as any).id === this.selected!['id']);
+              if (idx > -1) {
+                this.rows[idx] = res.data;
+                this.rows = [...this.rows];
+              }
+              this.showModal = false;
+              this.toast.success('Tenant updated');
+            }
+          },
+          error: (err) => {
+            this.toast.error('Failed to update tenant');
+            console.error(err);
+          }
+        });
+    }
+  }
   close(): void { this.showModal = false; this.form.enable(); }
 }

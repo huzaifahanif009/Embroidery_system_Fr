@@ -91,9 +91,9 @@ import { CommonModule } from '@angular/common';
 })
 export class GridActionsComponent implements ICellRendererAngularComp {
   private params!: ICellRendererParams & {
-    onView?: (d: unknown) => void;
-    onEdit?: (d: unknown) => void;
-    onDelete?: (d: unknown) => void;
+    onView?: (d: any) => void;
+    onEdit?: (d: any) => void;
+    onDelete?: (d: any) => void;
   };
 
   agInit(p: ICellRendererParams): void {
