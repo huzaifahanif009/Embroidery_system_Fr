@@ -147,6 +147,7 @@ export class SidebarComponent {
         { label: 'Departments', icon: 'pi-sitemap', route: '/settings/departments' },
         { label: 'Designations', icon: 'pi-sitemap', route: '/settings/designations' },
         { label: 'Financial Year', icon: 'pi-calendar-plus', route: '/settings/financial-year' },
+        { label: 'Number Series', icon: 'pi-calendar-plus', route: '/settings/number-series' },
       ]
     },
     {

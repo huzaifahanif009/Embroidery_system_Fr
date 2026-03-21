@@ -75,12 +75,6 @@ export class DepartmentsComponent extends BaseComponent implements OnInit {
         isActive: [true]
       });
   }
-  openCreate(): void {
-    this.mode = 'create';
-    this.form.reset({ isActive: true });
-    this.form.enable();
-    setTimeout(() => this.showModal = true, 50);
-  }
   onAction(e: { action: string; data: unknown }): void {
     const row = e.data as Record<string, unknown>;
     if (e.action === 'delete') {
@@ -97,8 +91,13 @@ export class DepartmentsComponent extends BaseComponent implements OnInit {
     } else {
       this.selected = row;
       this.mode = e.action as ModalMode;
-      this.form.patchValue(row);
-      if (e.action === 'view') this.form.disable(); else this.form.enable();
+      if (this.mode === 'create') {
+        this.form.reset({ isActive: true });
+        this.form.enable();
+      } else {
+        this.form.patchValue(row);
+        if (this.mode === 'view') this.form.disable(); else this.form.enable();
+      }
       setTimeout(() => this.showModal = true, 50);
     }
   }

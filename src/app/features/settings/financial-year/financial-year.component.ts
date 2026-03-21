@@ -43,6 +43,18 @@ import { EmbGridCustomButton } from '@shared/components/ag-grid/ag-grid.componen
       (customButtonClick)="onBtnClick($event)"
       [gridType]="1"></erp-grid>
     </emb-tabset>
+    <emb-tabset tabTitle="Periods" tabIcon="pi-calendar">
+      <erp-grid [rowData]="periodRows" [showRefresh]="false" [columnDefs]="periodsCols" 
+      [pagination]="false" [customButtons]="customButtons" 
+      (customButtonClick)="onBtnClick($event)"
+      [gridType]="1"></erp-grid>
+    </emb-tabset>
+    <emb-tabset tabTitle="Periods" tabIcon="pi-calendar">
+      <erp-grid [rowData]="periodRows" [showRefresh]="false" [columnDefs]="periodsCols" 
+      [pagination]="false" [customButtons]="customButtons" 
+      (customButtonClick)="onBtnClick($event)"
+      [gridType]="1"></erp-grid>
+    </emb-tabset>
   </emb-tabs>
   
 </erp-grid>`,
@@ -55,8 +67,8 @@ export class FinancialYearComponent extends BaseComponent implements OnInit {
   ];
   rows: any[] = [];
   periodRows: any[] = [];
-  showModal = false; mode:
-    ModalMode = 'create';
+  showModal = false;
+  mode: ModalMode = 'create';
   form!: FormGroup;
   selected: Record<string, unknown> | null = null;
 

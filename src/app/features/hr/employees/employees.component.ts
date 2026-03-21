@@ -36,7 +36,7 @@ import { DesignationsService } from '@core/services/api/designations.service';
         <emb-textbox formControlName="lastName" label="Last Name *" [readonly]="mode==='view'"></emb-textbox>
         <emb-textbox formControlName="phone" label="Phone" [readonly]="mode==='view'"></emb-textbox>
         <emb-textbox formControlName="email" label="Email" type="email" [readonly]="mode==='view'"></emb-textbox>
-        <emb-dropdown formControlName="designation" label="Designation *" [options]="designationOpts" [readonly]="mode==='view'"></emb-dropdown>
+        <emb-dropdown formControlName="designationId" label="Designation *" [options]="designationOpts" [readonly]="mode==='view'"></emb-dropdown>
         <emb-dropdown formControlName="employmentType" label="Employment Type *" [options]="empTypeOpts" [readonly]="mode==='view'"></emb-dropdown>
         <emb-textbox formControlName="joiningDate" label="Joining Date *" type="date" [readonly]="mode==='view'"></emb-textbox>
         <emb-textbox formControlName="baseSalary" label="Base Salary (PKR) *" type="number" [readonly]="mode==='view'"></emb-textbox>
@@ -76,8 +76,8 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
     { field: 'empCode', headerName: 'Code', width: 100, },
     { field: 'firstName', headerName: 'First Name', flex: 1 },
     { field: 'lastName', headerName: 'Last Name', flex: 1 },
-    { field: 'department.name', headerName: 'Dept', width: 110 },
-    { field: 'designation.name', headerName: 'Designation', flex: 1 },
+    { field: 'departmentName', headerName: 'Dept', width: 110 },
+    { field: 'designationName', headerName: 'Designation', flex: 1 },
     {
       field: 'employmentType', headerName: 'Type', width: 110,
       valueFormatter: (p: { value: string }) => ({ full_time: 'Full Time', part_time: 'Part Time', contract: 'Contract', intern: 'Intern' })[p.value] ?? p.value
@@ -108,7 +108,7 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
       departmentId: [null, Validators.required],
       phone: [''],
       email: [''],
-      designation: ['', Validators.required],
+      designationId: ['', Validators.required],
       employmentType: ['full_time', Validators.required],
       joiningDate: ['', Validators.required],
       baseSalary: [0, [Validators.required, Validators.min(0)]],
@@ -160,12 +160,20 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
         }
       });
     } else {
-      this.loadDepartments();
-      this.loadDesignations();
       this.selected = row;
       this.mode = e.action as ModalMode;
-      this.form.patchValue(row);
-      if (e.action === 'view') this.form.disable(); else this.form.enable();
+      if (this.mode === 'create') {
+        this.form.reset(
+          { employmentType: 'full_time', status: 'active', baseSalary: 0, gender: 'M' });
+        this.loadDepartments();
+        this.loadDesignations();
+        this.form.enable();
+      } else {
+        this.loadDepartments();
+        this.loadDesignations();
+        this.form.patchValue(row);
+        if (this.mode === 'view') this.form.disable(); else this.form.enable();
+      }
       setTimeout(() => this.showModal = true, 50);
     }
   }
@@ -186,6 +194,7 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
             if (res.success) {
               this.rows = [...this.rows, res.data];
               this.showModal = false;
+              this.loadData();
               this.showSuccess('Saved', 'Employee created');
             }
           },
@@ -206,6 +215,7 @@ export class EmployeesComponent extends BaseComponent implements OnInit {
                 this.rows = [...this.rows];
               }
               this.showModal = false;
+              this.loadData();
               this.showSuccess('Saved', 'Employee updated');
             }
           },

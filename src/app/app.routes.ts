@@ -39,6 +39,7 @@ export const routes: Routes = [
       { path: 'settings/departments', loadComponent: () => import('./features/settings/departments/departments.component').then(m => m.DepartmentsComponent) },
       { path: 'settings/designations', loadComponent: () => import('./features/settings/designations/designations.component').then(m => m.DesignationsComponent) },
       { path: 'settings/financial-year', loadComponent: () => import('./features/settings/financial-year/financial-year.component').then(m => m.FinancialYearComponent) },
+      { path: 'settings/number-series', loadComponent: () => import('./features/settings/number-series/number-series.component').then(m => m.NumberSeriesComponent) },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
     ]
   },

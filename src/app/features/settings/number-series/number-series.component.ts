@@ -1,18 +1,18 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { finalize } from 'rxjs/operators';
 import { ColDef } from 'ag-grid-community';
 import { BaseComponent } from '../../../shared/components/base/base.component';
 import { ToastService } from '../../../core/services/toast.service';
 import { ModalMode } from '../../../core/models';
-import { DesignationsService } from '@core/services/api/designations.service';
+import { DepartmentsService } from '@core/services/api/departments.service';
 import { SharedModule } from '@shared/gerenal/shared.module';
-
+import { NumberSeriesService } from '@core/services/api/numberseries.service';
 @Component({
-  selector: 'emb-designations',
-  standalone: true,
+  selector: 'emb-number-series', standalone: true,
   imports: [SharedModule],
   template: `
+
 <erp-grid 
   [rowData]="rows" 
   [columnDefs]="cols" 
@@ -24,46 +24,50 @@ import { SharedModule } from '@shared/gerenal/shared.module';
   [saving]="saving"
   (save)="onSave()"
   (cancel)="close()"
-  [showExport]="true"
-  (gridRefresh)="onRefresh()"
-  exportPrefix="designations"
-  modalWidth="580px">
+  modalWidth="580px" [showExport]="true"
+  exportPrefix="number-series"
+  (gridRefresh)="onRefresh()">
   
   <form [formGroup]="form" class="fg">
-    <emb-textbox formControlName="code" label="Code *" [readonly]="mode==='view'"></emb-textbox>
-    <emb-textbox formControlName="name" label="Name *" [readonly]="mode==='view'"></emb-textbox>
+    <emb-textbox formControlName="module" label="Module *" [readonly]="mode==='view'"></emb-textbox>
+    <emb-textbox formControlName="prefix" label="Prefix" [readonly]="mode==='view'"></emb-textbox>
+    <emb-textbox formControlName="startingNo" label="Starting No *" type="number" [readonly]="mode==='view'"></emb-textbox>
+    <emb-textbox formControlName="padding" label="Padding *" type="number" [readonly]="mode==='view'"></emb-textbox>
+    <emb-textbox formControlName="currentNo" label="Current No *" type="number" [readonly]="mode==='view'"></emb-textbox>
     <emb-dropdown formControlName="isActive" label="Status" [options]="listOptions" [readonly]="mode==='view'"></emb-dropdown>
   </form>
   
 </erp-grid>`,
   styles: ['.fg{display:grid;grid-template-columns:1fr 1fr;gap:12px;}.fc{grid-column:1/-1;}']
 })
-export class DesignationsComponent extends BaseComponent implements OnInit {
+export class NumberSeriesComponent extends BaseComponent implements OnInit {
   listOptions = [{ name: 'Active', value: true }, { name: 'Inactive', value: false }];
-
   rows: unknown[] = []; showModal = false; mode: ModalMode = 'create';
   form!: FormGroup;
   selected: Record<string, unknown> | null = null;
 
-  get modalTitle() { return ({ create: 'New', edit: 'Edit', view: 'View' } as Record<string, string>)[this.mode] + ' Designations'; }
+  get modalTitle() { return ({ create: 'New', edit: 'Edit', view: 'View' } as Record<string, string>)[this.mode] + ' Number Series'; }
   cols: ColDef[] = [
-    { field: 'code', headerName: 'Code', width: 100 },
-    { field: 'name', headerName: 'Designation', flex: 1 },
+    { field: 'module', headerName: 'Module', width: 100 },
+    { field: 'prefix', headerName: 'Prefix', flex: 1 },
+    { field: 'startingNo', headerName: 'Starting No', flex: 1 },
+    { field: 'padding', headerName: 'Padding', flex: 1 },
+    { field: 'currentNo', headerName: 'Current No', flex: 1 },
     {
       field: 'isActive', headerName: 'Status', width: 80,
-      cellRenderer: (p: any) => `<span class="tw-badge ${p.value === true ? 'tw-badge-green' : 'tw-badge-slate'}">${p.value}</span>`
+      cellRenderer: (p: any) => `<span class="tw-badge ${p.value === true ? 'tw-badge-green' : 'tw-badge-slate'}">${p.value === true ? 'Active' : 'Inactive'}</span>`
     }
   ];
   constructor(
     private toast: ToastService,
     private fb: FormBuilder,
-    private designationService: DesignationsService
+    private numberSeriesService: NumberSeriesService
   ) { super(); }
   ngOnInit(): void {
     this.loadData();
   }
   protected override loadData(): void {
-    this.designationService.getAll().subscribe({
+    this.numberSeriesService.getAll().subscribe({
       next: (res) => {
         this.rows = [...(res.data.data as unknown[])];
       },
@@ -73,15 +77,18 @@ export class DesignationsComponent extends BaseComponent implements OnInit {
     });
     this.form = this.fb.group(
       {
-        code: ['', Validators.required],
-        name: ['', Validators.required],
+        module: ['', Validators.required],
+        prefix: [''],
+        startingNo: [1, [Validators.required, Validators.min(1)]],
+        padding: [4, [Validators.required, Validators.min(1), Validators.max(10)]],
+        currentNo: [0, [Validators.required, Validators.min(0)]],
         isActive: [true]
       });
   }
   onAction(e: { action: string; data: unknown }): void {
     const row = e.data as Record<string, unknown>;
     if (e.action === 'delete') {
-      this.designationService.delete(row['id'] as number).subscribe({
+      this.numberSeriesService.delete(row['id'] as number).subscribe({
         next: () => {
           this.rows = this.rows.filter(x => (x as any).id !== row['id']);
           this.toast.success('Deleted');
@@ -95,7 +102,7 @@ export class DesignationsComponent extends BaseComponent implements OnInit {
       this.selected = row;
       this.mode = e.action as ModalMode;
       if (this.mode === 'create') {
-        this.form.reset({ isActive: true });
+        this.form.reset({ isActive: true, startingNo: 1, padding: 4, currentNo: 0 });
         this.form.enable();
       } else {
         this.form.patchValue(row);
@@ -111,26 +118,26 @@ export class DesignationsComponent extends BaseComponent implements OnInit {
     const val = this.form.getRawValue();
 
     if (this.mode === 'create') {
-      this.designationService.create(val)
+      this.numberSeriesService.create(val)
         .pipe(finalize(() => this.saving = false))
         .subscribe({
-          next: (res: any) => {
+          next: (res) => {
             if (res.success) {
               this.rows = [...this.rows, res.data];
               this.showModal = false;
-              this.toast.success('Designation created');
+              this.toast.success('Number Series created');
             }
           },
           error: (err) => {
-            this.toast.error('Failed to create designation');
+            this.toast.error('Failed to create Number Series');
             console.error(err);
           }
         });
     } else if (this.selected) {
-      this.designationService.update(this.selected['id'] as number, val)
+      this.numberSeriesService.update(this.selected['id'] as number, val)
         .pipe(finalize(() => this.saving = false))
         .subscribe({
-          next: (res: any) => {
+          next: (res) => {
             if (res.success) {
               const idx = this.rows.findIndex(x => (x as any).id === this.selected!['id']);
               if (idx > -1) {
@@ -138,11 +145,11 @@ export class DesignationsComponent extends BaseComponent implements OnInit {
                 this.rows = [...this.rows];
               }
               this.showModal = false;
-              this.toast.success('Designation updated');
+              this.toast.success('Number Series updated');
             }
           },
           error: (err) => {
-            this.toast.error('Failed to update designation');
+            this.toast.error('Failed to update Number Series');
             console.error(err);
           }
         });

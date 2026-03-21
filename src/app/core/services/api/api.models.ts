@@ -124,3 +124,15 @@ export interface Lov {
   name?: string;
   description?: string;
 }
+
+export interface NumberSeries {
+  id?: number;
+  module: string;
+  prefix?: string;
+  startingNo: number;
+  padding: number;
+  currentNo: number;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}

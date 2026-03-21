@@ -4,11 +4,11 @@ import { TabsModule } from 'primeng/tabs';
 import { EmbTabsetComponent } from './tabset.component';
 
 @Component({
-    selector: 'emb-tabs',
-    standalone: true,
-    imports: [CommonModule, TabsModule],
-    encapsulation: ViewEncapsulation.None,
-    template: `
+  selector: 'emb-tabs',
+  standalone: true,
+  imports: [CommonModule, TabsModule],
+  encapsulation: ViewEncapsulation.None,
+  template: `
     <div class="studio-tabs-container">
       <p-tabs value="0">
         <p-tablist>
@@ -29,7 +29,7 @@ import { EmbTabsetComponent } from './tabset.component';
       </p-tabs>
     </div>
   `,
-    styles: [`
+  styles: [`
     .studio-tabs-container .p-tablist-tab-list {
       background: transparent;
       border-bottom: 1px solid #e8e6df;
@@ -66,5 +66,5 @@ import { EmbTabsetComponent } from './tabset.component';
   `]
 })
 export class EmbTabsComponent {
-    @ContentChildren(EmbTabsetComponent) tabs!: QueryList<EmbTabsetComponent>;
+  @ContentChildren(EmbTabsetComponent) tabs!: QueryList<EmbTabsetComponent>;
 }
